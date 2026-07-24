@@ -1,5 +1,8 @@
 # ✦ Mi Estrella
 
+> **🌐 Ya está publicada en:** **https://sergidestiny2-max.github.io/mi-estrella/**
+> Ábrela desde el móvil en Safari y añádela a la pantalla de inicio (ver más abajo).
+
 Una pequeña web-app romántica para guardar los datos de la estrella que regalaste y
 saber **dónde está en el cielo en cada momento**: si es visible ahora, hacia qué punto
 cardinal mirar, a cuántos grados de altura, un mapa del cielo y hasta un modo brújula
