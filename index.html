@@ -8,7 +8,7 @@
 
   <!-- PWA / Safari iPhone -->
   <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#0b1026" />
+  <meta name="theme-color" content="#05060f" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -29,742 +29,590 @@
       --rojo:#ff9a9a;
       --tarjeta:rgba(20,26,68,0.55);
       --borde:rgba(243,210,122,0.28);
-      --sombra:0 10px 40px rgba(0,0,0,0.45);
       --serif:Georgia,'Times New Roman',serif;
+      --tab-h:70px;
     }
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-    html,body{margin:0;padding:0;min-height:100%;}
+    html,body{margin:0;padding:0;height:100%;overflow:hidden;}
     body{
       font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
       color:var(--texto);
-      background:radial-gradient(120% 90% at 50% -10%, #1a2260 0%, var(--noche-2) 45%, var(--noche-1) 100%);
-      background-attachment:fixed;
-      min-height:100vh;
-      overflow-x:hidden;
+      background:radial-gradient(130% 90% at 50% -10%, #1a2260 0%, var(--noche-2) 45%, var(--noche-1) 100%);
+      height:100dvh;
       -webkit-font-smoothing:antialiased;
+      user-select:none;
     }
-    /* Lienzo de estrellas de fondo */
     #cieloFondo{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;}
-
-    .app{
-      position:relative;z-index:1;
-      max-width:560px;margin:0 auto;
-      padding:calc(env(safe-area-inset-top) + 22px) 18px calc(env(safe-area-inset-bottom) + 40px);
-    }
-
     h1,h2,h3{font-family:var(--serif);font-weight:600;margin:0;letter-spacing:.3px;}
     .oro{color:var(--oro);}
     .suave{color:var(--texto-suave);}
-    .centro{text-align:center;}
 
-    /* ---------- Tarjetas ---------- */
-    .card{
-      background:var(--tarjeta);
-      border:1px solid var(--borde);
-      border-radius:22px;
-      padding:22px;
-      margin:16px 0;
-      box-shadow:var(--sombra);
-      backdrop-filter:blur(6px);
-      -webkit-backdrop-filter:blur(6px);
+    /* ===================== APP SHELL ===================== */
+    #app{position:relative;z-index:2;display:flex;flex-direction:column;height:100dvh;}
+    #screens{position:relative;flex:1;overflow:hidden;}
+    .screen{
+      position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+      padding:calc(env(safe-area-inset-top) + 14px) 18px calc(var(--tab-h) + env(safe-area-inset-bottom) + 20px);
+      animation:aparecer .35s ease both;
     }
+    .screen.oculto{display:none;}
+    @keyframes aparecer{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
-    /* ---------- Portada estrella ---------- */
-    .portada{text-align:center;padding:30px 22px;}
-    .portada .estrellita{font-size:40px;line-height:1;filter:drop-shadow(0 0 14px rgba(243,210,122,.8));animation:latir 3.5s ease-in-out infinite;}
-    @keyframes latir{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.12);opacity:1}}
-    .portada h1{font-size:30px;margin:10px 0 4px;color:var(--oro-claro);text-shadow:0 0 24px rgba(243,210,122,.35);}
-    .portada .fecha{color:var(--texto-suave);font-size:14px;letter-spacing:1.5px;text-transform:uppercase;}
-    .portada .dedicatoria{font-family:var(--serif);font-style:italic;font-size:17px;line-height:1.6;margin-top:16px;color:var(--texto);}
-    .portada .meta{margin-top:16px;font-size:12.5px;color:var(--texto-suave);line-height:1.7;}
+    .cabecera{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+    .cabecera .tit{font-family:var(--serif);font-size:15px;letter-spacing:2px;text-transform:uppercase;color:var(--texto-suave);}
+    .icono-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--oro);
+      width:40px;height:40px;border-radius:50%;font-size:17px;display:flex;align-items:center;justify-content:center;}
 
-    /* ---------- Estado de visibilidad ---------- */
-    .estado-titulo{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--texto-suave);margin-bottom:10px;}
-    .visible-badge{display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:600;padding:8px 16px;border-radius:999px;}
-    .visible-si{background:rgba(126,224,168,.14);color:var(--verde);border:1px solid rgba(126,224,168,.4);}
+    /* ===================== BARRA DE PESTAÑAS ===================== */
+    #tabbar{
+      position:relative;z-index:3;display:flex;height:calc(var(--tab-h) + env(safe-area-inset-bottom));
+      padding-bottom:env(safe-area-inset-bottom);
+      background:rgba(6,8,20,0.82);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+      border-top:1px solid rgba(243,210,122,0.14);
+    }
+    .tab{flex:1;background:none;border:none;color:var(--texto-suave);display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:3px;font-size:11px;letter-spacing:.3px;cursor:pointer;
+      padding-top:8px;transition:color .2s;}
+    .tab .ic{font-size:22px;line-height:1;transition:transform .2s;}
+    .tab.activa{color:var(--oro-claro);}
+    .tab.activa .ic{transform:translateY(-2px) scale(1.12);filter:drop-shadow(0 0 8px rgba(243,210,122,.6));}
+
+    /* ===================== TARJETAS ===================== */
+    .card{background:var(--tarjeta);border:1px solid var(--borde);border-radius:22px;padding:20px;margin:14px 0;
+      box-shadow:0 10px 34px rgba(0,0,0,.4);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}
+
+    /* ---- Portada / héroe estrella ---- */
+    .hero{text-align:center;padding:22px 18px 26px;}
+    .hero .estrellita{font-size:46px;line-height:1;filter:drop-shadow(0 0 16px rgba(243,210,122,.85));animation:latir 3.5s ease-in-out infinite;}
+    @keyframes latir{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.14);opacity:1}}
+    .hero h1{font-size:30px;margin:12px 0 4px;color:var(--oro-claro);text-shadow:0 0 26px rgba(243,210,122,.35);}
+    .hero .fecha{color:var(--texto-suave);font-size:13px;letter-spacing:1.6px;text-transform:uppercase;}
+    .hero .dedicatoria{font-family:var(--serif);font-style:italic;font-size:17px;line-height:1.6;margin-top:16px;color:var(--texto);}
+
+    /* ---- Estado ---- */
+    .estado-pill{display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:700;padding:9px 18px;border-radius:999px;margin-bottom:4px;}
+    .visible-si{background:rgba(126,224,168,.16);color:var(--verde);border:1px solid rgba(126,224,168,.45);}
     .visible-no{background:rgba(255,154,154,.12);color:var(--rojo);border:1px solid rgba(255,154,154,.35);}
-    .instruccion{font-family:var(--serif);font-size:22px;line-height:1.4;margin:16px 0 6px;}
+    .instruccion{font-family:var(--serif);font-size:23px;line-height:1.35;margin:14px 0 4px;}
     .instruccion b{color:var(--oro);}
-    .datos-fila{display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;}
-    .dato{flex:1;min-width:120px;background:rgba(5,6,15,.35);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:12px 14px;text-align:center;}
-    .dato .n{font-size:24px;font-weight:700;color:var(--oro-claro);font-family:var(--serif);}
-    .dato .e{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--texto-suave);margin-top:2px;}
-    .ubic{margin-top:14px;font-size:12px;color:var(--texto-suave);}
+    .datos-fila{display:flex;gap:12px;margin-top:16px;}
+    .dato{flex:1;background:rgba(5,6,15,.4);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px;text-align:center;}
+    .dato .n{font-size:26px;font-weight:700;color:var(--oro-claro);font-family:var(--serif);}
+    .dato .e{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--texto-suave);margin-top:3px;}
+    .ubic{margin-top:14px;font-size:12px;color:var(--texto-suave);text-align:center;}
+    .meta-estrella{margin-top:12px;font-size:12px;color:var(--texto-suave);line-height:1.7;text-align:center;}
 
-    /* ---------- Mapa del cielo ---------- */
-    #mapaCielo{width:100%;height:auto;display:block;margin:6px auto 0;border-radius:50%;}
-    .mapa-leyenda{font-size:12px;color:var(--texto-suave);text-align:center;margin-top:10px;line-height:1.6;}
+    /* ===================== MAPA DEL CIELO ===================== */
+    #mapaCielo{width:100%;max-width:440px;height:auto;display:block;margin:0 auto;border-radius:50%;}
+    .mapa-leyenda{font-size:12.5px;color:var(--texto-suave);text-align:center;margin-top:14px;line-height:1.65;}
 
-    /* ---------- Brújula ---------- */
-    .brujula-wrap{text-align:center;}
-    #brujulaCanvas{width:230px;height:230px;max-width:70vw;max-height:70vw;margin:8px auto 4px;display:block;}
-    .brujula-msg{font-size:14px;color:var(--texto-suave);min-height:20px;margin-top:6px;}
-    .brujula-msg.ok{color:var(--verde);font-weight:600;font-size:16px;}
+    /* ===================== CÁMARA (AR) ===================== */
+    #scr-camara{padding:0;overflow:hidden;background:#000;}
+    #camVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;background:#000;}
+    #camOverlay{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;}
+    .cam-banner{position:absolute;left:0;right:0;top:0;z-index:2;
+      padding:calc(env(safe-area-inset-top) + 14px) 18px 14px;
+      background:linear-gradient(180deg,rgba(5,6,15,.85),rgba(5,6,15,0));
+      text-align:center;font-size:15px;font-weight:600;}
+    .cam-hint{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 14px);z-index:2;
+      padding:0 24px;text-align:center;font-size:14px;color:var(--texto-suave);line-height:1.5;}
+    #camInicio{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:16px;text-align:center;padding:30px;
+      background:radial-gradient(120% 80% at 50% 30%, #12184a 0%, var(--noche-1) 70%);}
+    #camInicio .ic{font-size:56px;filter:drop-shadow(0 0 18px rgba(243,210,122,.7));}
+    #camInicio h2{font-size:24px;color:var(--oro-claro);}
+    #camInicio p{color:var(--texto-suave);font-size:14.5px;line-height:1.6;max-width:320px;margin:0;}
+    #camError{position:absolute;left:16px;right:16px;top:50%;transform:translateY(-50%);z-index:4;
+      background:rgba(20,26,68,.92);border:1px solid var(--borde);border-radius:18px;padding:22px;text-align:center;
+      font-size:14.5px;line-height:1.6;display:none;}
 
-    /* ---------- Formulario ---------- */
-    label{display:block;font-size:13px;color:var(--texto-suave);margin:14px 0 6px;letter-spacing:.3px;}
+    /* ===================== FORMULARIO ===================== */
+    #pantallaRegistro{position:fixed;inset:0;z-index:20;overflow-y:auto;
+      padding:calc(env(safe-area-inset-top) + 24px) 18px calc(env(safe-area-inset-bottom) + 30px);}
+    label{display:block;font-size:13px;color:var(--texto-suave);margin:14px 0 6px;}
     label .op{opacity:.6;font-style:italic;}
-    input,textarea{
-      width:100%;background:rgba(5,6,15,.5);border:1px solid rgba(255,255,255,.12);
-      border-radius:12px;color:var(--texto);padding:12px 14px;font-size:16px;font-family:inherit;
-      transition:border-color .2s;
-    }
+    input,textarea{width:100%;background:rgba(5,6,15,.5);border:1px solid rgba(255,255,255,.12);border-radius:12px;
+      color:var(--texto);padding:12px 14px;font-size:16px;font-family:inherit;}
     input:focus,textarea:focus{outline:none;border-color:var(--oro);}
     textarea{min-height:70px;resize:vertical;}
     .pista{font-size:11.5px;color:var(--texto-suave);opacity:.75;margin-top:4px;}
     .fila2{display:flex;gap:12px;}
     .fila2 > div{flex:1;}
 
-    /* ---------- Botones ---------- */
+    /* ===================== BOTONES ===================== */
     button{font-family:inherit;cursor:pointer;border:none;font-size:16px;}
-    .btn{
-      display:block;width:100%;padding:15px;border-radius:14px;font-weight:700;letter-spacing:.4px;
+    .btn{display:block;width:100%;padding:16px;border-radius:16px;font-weight:800;letter-spacing:.4px;
       background:linear-gradient(180deg,var(--oro-claro),var(--oro));color:#2a1e00;
-      box-shadow:0 6px 20px rgba(243,210,122,.28);margin-top:22px;transition:transform .1s;
-    }
-    .btn:active{transform:scale(.98);}
-    .btn-sec{
-      background:transparent;color:var(--oro);border:1px solid var(--borde);
-      box-shadow:none;font-weight:600;padding:12px;margin-top:12px;
-    }
-    .btn-brujula{max-width:260px;margin:16px auto 0;}
-
+      box-shadow:0 8px 24px rgba(243,210,122,.3);transition:transform .1s;}
+    .btn:active{transform:scale(.97);}
+    .btn-sec{background:transparent;color:var(--oro);border:1px solid var(--borde);box-shadow:none;font-weight:600;padding:13px;margin-top:12px;}
+    .btn-cta{margin-top:18px;}
     .oculto{display:none !important;}
-    .titulo-seccion{display:flex;align-items:center;gap:10px;margin-bottom:2px;}
-    .titulo-seccion h2{font-size:19px;color:var(--oro-claro);}
-    .fade{animation:aparecer .5s ease both;}
-    @keyframes aparecer{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-    .pie{text-align:center;font-size:11px;color:var(--texto-suave);opacity:.6;margin-top:28px;}
   </style>
 </head>
 <body>
   <canvas id="cieloFondo"></canvas>
 
-  <div class="app">
-
-    <!-- ============ FORMULARIO DE REGISTRO ============ -->
-    <section id="pantallaRegistro" class="oculto fade">
-      <div class="centro" style="margin-bottom:6px;">
-        <div class="portada estrellita" style="font-size:44px;">✦</div>
-        <h1 class="oro" style="font-size:26px;margin-top:8px;">Registra tu estrella</h1>
-        <p class="suave" style="font-size:14px;margin-top:6px;">Guarda aquí los datos de tu certificado. Se conservarán para siempre en este dispositivo.</p>
+  <!-- ============ FORMULARIO DE REGISTRO / EDICIÓN ============ -->
+  <section id="pantallaRegistro" class="oculto">
+    <div style="text-align:center;margin-bottom:6px;">
+      <div style="font-size:44px;filter:drop-shadow(0 0 14px rgba(243,210,122,.8));">✦</div>
+      <h1 class="oro" style="font-size:25px;margin-top:8px;">Tu estrella</h1>
+      <p class="suave" style="font-size:14px;margin-top:6px;">Guarda los datos de tu certificado. Se conservan para siempre en este dispositivo.</p>
+    </div>
+    <div class="card">
+      <label>Nombre de la estrella</label>
+      <input id="f_nombre" type="text" placeholder="Ej. Ana & Luis" />
+      <div class="fila2">
+        <div>
+          <label>Ascensión recta (RA)</label>
+          <input id="f_ra" type="text" placeholder="20h 41m 25s" />
+          <div class="pista">Horas, min, seg</div>
+        </div>
+        <div>
+          <label>Declinación (DEC)</label>
+          <input id="f_dec" type="text" placeholder="+45° 16' 49&quot;" />
+          <div class="pista">Grados, min, seg</div>
+        </div>
       </div>
+      <label>Nº de registro del certificado <span class="op">(opcional)</span></label>
+      <input id="f_registro" type="text" placeholder="Ej. REG-2024-00123" />
+      <label>Catálogo / número HIP <span class="op">(opcional)</span></label>
+      <input id="f_hip" type="text" placeholder="Ej. HIP 91262" />
+      <label>Fecha especial</label>
+      <input id="f_fecha" type="date" />
+      <label>Dedicatoria</label>
+      <textarea id="f_dedicatoria" placeholder="Escribe unas palabras bonitas..."></textarea>
+      <div id="errorForm" class="oculto" style="color:var(--rojo);font-size:13px;margin-top:14px;"></div>
+      <button class="btn" id="btnGuardar" style="margin-top:22px;">Guardar mi estrella ✦</button>
+      <button class="btn btn-sec oculto" id="btnCancelar">Cancelar</button>
+    </div>
+  </section>
 
-      <div class="card">
-        <label>Nombre de la estrella</label>
-        <input id="f_nombre" type="text" placeholder="Ej. Ana & Luis" />
+  <!-- ============ APP ============ -->
+  <div id="app" class="oculto">
+    <main id="screens">
 
-        <div class="fila2">
-          <div>
-            <label>Ascensión recta (RA)</label>
-            <input id="f_ra" type="text" placeholder="20h 41m 25s" inputmode="text" />
-            <div class="pista">Horas, minutos y segundos</div>
+      <!-- ---- INICIO ---- -->
+      <section id="scr-inicio" class="screen">
+        <div class="cabecera">
+          <span class="tit">Mi Estrella</span>
+          <button class="icono-btn" id="btnEditar" title="Editar">✎</button>
+        </div>
+
+        <section class="card hero">
+          <div class="estrellita">✦</div>
+          <h1 id="v_nombre">—</h1>
+          <div class="fecha" id="v_fecha"></div>
+          <div class="dedicatoria" id="v_dedicatoria"></div>
+        </section>
+
+        <section class="card" style="text-align:center;">
+          <div id="v_pill"><span class="estado-pill visible-no">Calculando…</span></div>
+          <div class="instruccion" id="v_instruccion">Buscando tu estrella…</div>
+          <div class="datos-fila">
+            <div class="dato"><div class="n" id="v_altura">—</div><div class="e">Altura</div></div>
+            <div class="dato"><div class="n" id="v_azimut">—</div><div class="e">Dirección</div></div>
           </div>
-          <div>
-            <label>Declinación (DEC)</label>
-            <input id="f_dec" type="text" placeholder="+45° 16' 49&quot;" inputmode="text" />
-            <div class="pista">Grados, minutos y segundos</div>
+          <button class="btn btn-cta" id="btnIrCamara">📷 Buscarla con la cámara</button>
+          <div class="ubic" id="v_ubicacion">📍 …</div>
+          <div class="meta-estrella" id="v_meta"></div>
+        </section>
+      </section>
+
+      <!-- ---- CIELO ---- -->
+      <section id="scr-cielo" class="screen oculto">
+        <div class="cabecera"><span class="tit">Mapa del cielo</span><span style="width:40px"></span></div>
+        <section class="card">
+          <canvas id="mapaCielo" width="600" height="600"></canvas>
+          <div class="mapa-leyenda">
+            El <b style="color:var(--oro)">punto dorado</b> es tu estrella. El centro es el cénit (justo encima de ti)
+            y el borde es el horizonte. Orienta el mapa como una brújula: <b>N</b> arriba.
           </div>
-        </div>
-
-        <label>Número de registro del certificado <span class="op">(opcional)</span></label>
-        <input id="f_registro" type="text" placeholder="Ej. REG-2024-00123" />
-
-        <label>Catálogo / número HIP <span class="op">(opcional)</span></label>
-        <input id="f_hip" type="text" placeholder="Ej. HIP 91262" />
-
-        <label>Fecha especial</label>
-        <input id="f_fecha" type="date" />
-
-        <label>Dedicatoria</label>
-        <textarea id="f_dedicatoria" placeholder="Escribe unas palabras bonitas..."></textarea>
-
-        <div id="errorForm" class="oculto" style="color:var(--rojo);font-size:13px;margin-top:14px;"></div>
-
-        <button class="btn" id="btnGuardar">Guardar mi estrella ✦</button>
-        <button class="btn btn-sec oculto" id="btnCancelar">Cancelar</button>
-      </div>
-    </section>
-
-    <!-- ============ PANTALLA PRINCIPAL ============ -->
-    <main id="pantallaPrincipal" class="oculto">
-
-      <!-- Portada -->
-      <section class="card portada fade">
-        <div class="estrellita">✦</div>
-        <h1 id="v_nombre">—</h1>
-        <div class="fecha" id="v_fecha"></div>
-        <div class="dedicatoria" id="v_dedicatoria"></div>
-        <div class="meta" id="v_meta"></div>
+        </section>
       </section>
 
-      <!-- Posición en tiempo real -->
-      <section class="card fade">
-        <div class="estado-titulo">Ahora mismo</div>
-        <div id="v_badge"><span class="visible-badge visible-no">Calculando…</span></div>
-        <div class="instruccion" id="v_instruccion">Buscando tu estrella en el cielo…</div>
-        <div class="datos-fila">
-          <div class="dato"><div class="n" id="v_altura">—</div><div class="e">Altura</div></div>
-          <div class="dato"><div class="n" id="v_azimut">—</div><div class="e">Dirección</div></div>
+      <!-- ---- CÁMARA (AR) ---- -->
+      <section id="scr-camara" class="screen oculto">
+        <video id="camVideo" playsinline muted autoplay></video>
+        <canvas id="camOverlay"></canvas>
+        <div class="cam-banner oculto" id="camBanner">…</div>
+        <div class="cam-hint oculto" id="camHint">Mueve el móvil despacio siguiendo la flecha.</div>
+
+        <div id="camInicio">
+          <div class="ic">📷✦</div>
+          <h2>Buscar con la cámara</h2>
+          <p>Enciende la cámara y apunta al cielo. Un marcador dorado te dirá dónde está tu estrella, con flechas para guiarte.</p>
+          <button class="btn" id="btnActivarCam" style="max-width:300px;">Encender cámara ✦</button>
+          <p style="font-size:12.5px;opacity:.75;">Te pedirá permiso para la cámara y el movimiento. Sujeta el móvil en vertical.</p>
         </div>
-        <div class="ubic" id="v_ubicacion">📍 Ubicación: …</div>
+        <div id="camError"></div>
       </section>
 
-      <!-- Mapa del cielo -->
-      <section class="card fade">
-        <div class="titulo-seccion"><h2>Mapa del cielo</h2></div>
-        <canvas id="mapaCielo" width="600" height="600"></canvas>
-        <div class="mapa-leyenda">
-          El <b style="color:var(--oro)">punto dorado</b> es tu estrella. El centro es el cénit (justo encima de ti)
-          y el borde es el horizonte. Orienta el mapa como una brújula: <b>N</b> arriba.
-        </div>
-      </section>
-
-      <!-- Brújula -->
-      <section class="card fade brujula-wrap">
-        <div class="titulo-seccion" style="justify-content:center;"><h2>Modo brújula</h2></div>
-        <p class="suave" style="font-size:13px;margin:6px 0 0;">Mueve el móvil y la flecha te guiará hacia la estrella.</p>
-        <button class="btn btn-brujula" id="btnBrujula">Activar brújula 🧭</button>
-        <div id="brujulaContenido" class="oculto">
-          <canvas id="brujulaCanvas" width="460" height="460"></canvas>
-          <div class="brujula-msg" id="brujulaMsg">Gira despacio buscando la estrella…</div>
-        </div>
-      </section>
-
-      <button class="btn btn-sec" id="btnEditar">✎ Editar los datos de la estrella</button>
-      <div class="pie">Hecho con cariño ✦ Añádela a tu pantalla de inicio para tenerla siempre a mano.</div>
     </main>
 
+    <!-- ---- BARRA DE PESTAÑAS ---- -->
+    <nav id="tabbar">
+      <button class="tab activa" data-scr="inicio"><span class="ic">✦</span>Inicio</button>
+      <button class="tab" data-scr="cielo"><span class="ic">🧭</span>Cielo</button>
+      <button class="tab" data-scr="camara"><span class="ic">📷</span>Cámara</button>
+    </nav>
   </div>
 
   <script>
   /* =========================================================================
-     MI ESTRELLA — App para encontrar en el cielo la estrella que regalaste.
-     Todo el cálculo astronómico está hecho a mano con tiempo sidéreo y
-     validado contra Vega (ver consola). Sin librerías externas => funciona
-     100% sin conexión.
+     MI ESTRELLA — encuentra en el cielo la estrella regalada.
+     Cálculo astronómico propio (tiempo sidéreo), validado con Vega (consola).
+     Sin librerías externas => funciona sin conexión.
      ========================================================================= */
-
-  const DEG = Math.PI / 180;
-  const RAD = 180 / Math.PI;
+  const DEG = Math.PI/180, RAD = 180/Math.PI;
   const CLAVE = 'miEstrella';
-  const UBIC_DEFECTO = { lat: 41.3874, lon: 2.1686, nombre: 'Barcelona (por defecto)' };
-
-  /* ---------------------------------------------------------------------------
-     1) PARSEO DE COORDENADAS
-     Acepta formatos como "20h 41m 25s", "20 41 25", "+45° 16' 49", "-12 30"
-  --------------------------------------------------------------------------- */
-  function parseRA(txt){
-    // Devuelve grados (0..360). RA se da en horas.
-    if(!txt) return null;
-    const nums = txt.match(/-?\d+(?:[.,]\d+)?/g);
-    if(!nums || nums.length === 0) return null;
-    const h = parseFloat(nums[0].replace(',', '.')) || 0;
-    const m = nums[1] ? parseFloat(nums[1].replace(',', '.')) : 0;
-    const s = nums[2] ? parseFloat(nums[2].replace(',', '.')) : 0;
-    const horas = h + m/60 + s/3600;
-    return horas * 15; // 1 hora = 15 grados
-  }
-  function parseDEC(txt){
-    // Devuelve grados (-90..90).
-    if(!txt) return null;
-    const negativo = /-|s/i.test(txt.trim()[0]) || txt.trim()[0] === '-';
-    const nums = txt.match(/\d+(?:[.,]\d+)?/g);
-    if(!nums || nums.length === 0) return null;
-    const d = parseFloat(nums[0].replace(',', '.')) || 0;
-    const m = nums[1] ? parseFloat(nums[1].replace(',', '.')) : 0;
-    const s = nums[2] ? parseFloat(nums[2].replace(',', '.')) : 0;
-    let grados = d + m/60 + s/3600;
-    if(negativo || txt.includes('-')) grados = -grados;
-    return grados;
-  }
-
-  /* ---------------------------------------------------------------------------
-     2) ASTRONOMÍA: RA/DEC -> Altitud/Azimut
-  --------------------------------------------------------------------------- */
-  function diaJuliano(fecha){
-    return fecha.getTime() / 86400000 + 2440587.5;
-  }
-  // Tiempo sidéreo medio de Greenwich, en grados (0..360)
-  function gmstGrados(fecha){
-    const jd = diaJuliano(fecha);
-    const D = jd - 2451545.0;          // días desde J2000
-    const T = D / 36525;               // siglos julianos
-    let gmst = 280.46061837 + 360.98564736629 * D + 0.000387933 * T * T - (T*T*T)/38710000;
-    return ((gmst % 360) + 360) % 360;
-  }
-  // Convierte coordenadas ecuatoriales (RA/DEC en grados) a horizontales.
-  // lat/lon del observador en grados (lon Este positivo). Devuelve alt/az en grados.
-  function altAz(raDeg, decDeg, latDeg, lonDeg, fecha){
-    const lst = gmstGrados(fecha) + lonDeg;         // tiempo sidéreo local (grados)
-    let ha = (((lst - raDeg) % 360) + 360) % 360;   // ángulo horario (grados)
-    const haR = ha * DEG, decR = decDeg * DEG, latR = latDeg * DEG;
-
-    const sinAlt = Math.sin(decR)*Math.sin(latR) + Math.cos(decR)*Math.cos(latR)*Math.cos(haR);
-    const alt = Math.asin(Math.max(-1, Math.min(1, sinAlt)));
-
-    let cosAz = (Math.sin(decR) - Math.sin(alt)*Math.sin(latR)) / (Math.cos(alt)*Math.cos(latR));
-    cosAz = Math.max(-1, Math.min(1, cosAz));
-    let az = Math.acos(cosAz);          // 0..π medido desde el Norte
-    if(Math.sin(haR) > 0) az = 2*Math.PI - az;  // mitad Oeste del cielo
-
-    return { altitude: alt * RAD, azimuth: az * RAD };
-  }
-
-  // Próxima hora (Date) a la que la estrella asoma por el horizonte.
-  // Devuelve {estado:'sale', hora:Date} | {estado:'siempre'} | {estado:'nunca'}
-  function proximaSalida(raDeg, decDeg, latDeg, lonDeg, desde){
-    const horizonte = -0.567; // grados: refracción atmosférica media
-    let previa = altAz(raDeg, decDeg, latDeg, lonDeg, desde).altitude;
-    const paso = 2 * 60 * 1000; // 2 minutos
-    for(let i = 1; i <= 24*30; i++){ // hasta 24 h
-      const t = new Date(desde.getTime() + i*paso);
-      const a = altAz(raDeg, decDeg, latDeg, lonDeg, t).altitude;
-      if(previa <= horizonte && a > horizonte){
-        // Afinar al minuto entre t-paso y t
-        let ini = t.getTime() - paso, fin = t.getTime();
-        for(let k=0;k<12;k++){
-          const mid = (ini+fin)/2;
-          const am = altAz(raDeg, decDeg, latDeg, lonDeg, new Date(mid)).altitude;
-          if(am > horizonte) fin = mid; else ini = mid;
-        }
-        return { estado:'sale', hora:new Date(fin) };
-      }
-      previa = a;
-    }
-    // No cruzó en 24h: o siempre visible o nunca
-    const ahora = altAz(raDeg, decDeg, latDeg, lonDeg, desde).altitude;
-    return ahora > horizonte ? { estado:'siempre' } : { estado:'nunca' };
-  }
-
-  // Grados de azimut -> punto cardinal (16 direcciones, en español)
-  function cardinal(az){
-    const p = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO'];
-    return p[Math.round(((az % 360) / 22.5)) % 16];
-  }
-  const NOMBRE_CARDINAL = {
-    N:'el Norte', NNE:'el Nor-noreste', NE:'el Noreste', ENE:'el Este-noreste',
-    E:'el Este', ESE:'el Este-sureste', SE:'el Sureste', SSE:'el Sur-sureste',
-    S:'el Sur', SSO:'el Sur-suroeste', SO:'el Suroeste', OSO:'el Oeste-suroeste',
-    O:'el Oeste', ONO:'el Oeste-noroeste', NO:'el Noroeste', NNO:'el Nor-noroeste'
-  };
-
-  /* ---------------------------------------------------------------------------
-     3) VALIDACIÓN con una estrella conocida (Vega) — se ve en la consola
-  --------------------------------------------------------------------------- */
-  function autoValidacion(){
-    // Vega: RA 18h 36m 56s, DEC +38° 47'
-    const raVega = parseRA('18h 36m 56s');
-    const decVega = parseDEC("+38° 47'");
-    // En su tránsito superior desde Barcelona, la altura debe ser 90-(lat-dec).
-    // Comprobamos que el cálculo es coherente en varios instantes.
-    const lat = 41.3874, lon = 2.1686;
-    const alturaMaxTeorica = 90 - Math.abs(lat - decVega); // ~87.4°
-    // Buscamos el máximo de altura de Vega en las próximas 24h
-    let maxAlt = -90;
-    for(let m=0;m<24*60;m++){
-      const t = new Date(Date.now() + m*60000);
-      const a = altAz(raVega, decVega, lat, lon, t).altitude;
-      if(a > maxAlt) maxAlt = a;
-    }
-    console.log('%c✦ Mi Estrella — Autovalidación (Vega)', 'color:#f3d27a;font-weight:bold');
-    console.log('  RA Vega =', (raVega/15).toFixed(4), 'h   DEC Vega =', decVega.toFixed(3), '°');
-    console.log('  Altura máxima teórica en tránsito ≈', alturaMaxTeorica.toFixed(2), '°');
-    console.log('  Altura máxima calculada (24h)      ≈', maxAlt.toFixed(2), '°');
-    const error = Math.abs(maxAlt - alturaMaxTeorica);
-    console.log(error < 0.5
-      ? '%c  ✓ Cálculo correcto (error < 0.5°)' : '%c  ⚠ Revisar: diferencia = '+error.toFixed(2)+'°',
-      'color:' + (error < 0.5 ? '#7ee0a8' : '#ff9a9a'));
-    return error < 0.5;
-  }
-
-  /* ---------------------------------------------------------------------------
-     4) ESTADO Y ALMACENAMIENTO
-  --------------------------------------------------------------------------- */
-  let estrella = null;      // datos guardados
-  let ubicacion = { ...UBIC_DEFECTO };
-
-  function cargar(){
-    try{ estrella = JSON.parse(localStorage.getItem(CLAVE)); }catch(e){ estrella = null; }
-  }
-  function guardar(datos){
-    localStorage.setItem(CLAVE, JSON.stringify(datos));
-    estrella = datos;
-  }
-
-  /* ---------------------------------------------------------------------------
-     5) UI: navegación entre pantallas
-  --------------------------------------------------------------------------- */
+  const UBIC_DEFECTO = { lat:41.3874, lon:2.1686, nombre:'Barcelona (por defecto)' };
   const $ = id => document.getElementById(id);
 
+  /* ---------- 1) PARSEO DE COORDENADAS ---------- */
+  function parseRA(txt){
+    if(!txt) return null;
+    const n = txt.match(/-?\d+(?:[.,]\d+)?/g); if(!n) return null;
+    const h=parseFloat(n[0].replace(',','.'))||0, m=n[1]?parseFloat(n[1].replace(',','.')):0, s=n[2]?parseFloat(n[2].replace(',','.')):0;
+    return (h + m/60 + s/3600) * 15;
+  }
+  function parseDEC(txt){
+    if(!txt) return null;
+    const neg = txt.includes('-');
+    const n = txt.match(/\d+(?:[.,]\d+)?/g); if(!n) return null;
+    const d=parseFloat(n[0].replace(',','.'))||0, m=n[1]?parseFloat(n[1].replace(',','.')):0, s=n[2]?parseFloat(n[2].replace(',','.')):0;
+    let g = d + m/60 + s/3600; return neg ? -g : g;
+  }
+
+  /* ---------- 2) ASTRONOMÍA: RA/DEC -> Altitud/Azimut ---------- */
+  function diaJuliano(f){ return f.getTime()/86400000 + 2440587.5; }
+  function gmstGrados(f){
+    const D = diaJuliano(f) - 2451545.0, T = D/36525;
+    let g = 280.46061837 + 360.98564736629*D + 0.000387933*T*T - (T*T*T)/38710000;
+    return ((g%360)+360)%360;
+  }
+  function altAz(ra, dec, lat, lon, f){
+    const lst = gmstGrados(f) + lon;
+    let ha = (((lst - ra)%360)+360)%360;
+    const haR=ha*DEG, dR=dec*DEG, lR=lat*DEG;
+    const sinAlt = Math.sin(dR)*Math.sin(lR) + Math.cos(dR)*Math.cos(lR)*Math.cos(haR);
+    const alt = Math.asin(Math.max(-1,Math.min(1,sinAlt)));
+    let cosAz = (Math.sin(dR) - Math.sin(alt)*Math.sin(lR)) / (Math.cos(alt)*Math.cos(lR));
+    cosAz = Math.max(-1,Math.min(1,cosAz));
+    let az = Math.acos(cosAz);
+    if(Math.sin(haR) > 0) az = 2*Math.PI - az;
+    return { altitude: alt*RAD, azimuth: az*RAD };
+  }
+  function proximaSalida(ra, dec, lat, lon, desde){
+    const hor = -0.567; let prev = altAz(ra,dec,lat,lon,desde).altitude; const paso=2*60*1000;
+    for(let i=1;i<=24*30;i++){
+      const t = new Date(desde.getTime()+i*paso);
+      const a = altAz(ra,dec,lat,lon,t).altitude;
+      if(prev<=hor && a>hor){
+        let ini=t.getTime()-paso, fin=t.getTime();
+        for(let k=0;k<12;k++){ const mid=(ini+fin)/2; if(altAz(ra,dec,lat,lon,new Date(mid)).altitude>hor) fin=mid; else ini=mid; }
+        return { estado:'sale', hora:new Date(fin) };
+      }
+      prev=a;
+    }
+    return altAz(ra,dec,lat,lon,desde).altitude>hor ? {estado:'siempre'} : {estado:'nunca'};
+  }
+  function cardinal(az){
+    const p=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO'];
+    return p[Math.round(((az%360)/22.5))%16];
+  }
+  const NOMBRE_CARDINAL={N:'el Norte',NNE:'el Nor-noreste',NE:'el Noreste',ENE:'el Este-noreste',E:'el Este',ESE:'el Este-sureste',SE:'el Sureste',SSE:'el Sur-sureste',S:'el Sur',SSO:'el Sur-suroeste',SO:'el Suroeste',OSO:'el Oeste-suroeste',O:'el Oeste',ONO:'el Oeste-noroeste',NO:'el Noroeste',NNO:'el Nor-noroeste'};
+  function difAngulo(objetivo, desde){ return ((objetivo - desde + 540)%360) - 180; } // -180..180
+
+  /* ---------- 3) VALIDACIÓN (Vega) ---------- */
+  function autoValidacion(){
+    const ra=parseRA('18h 36m 56s'), dec=parseDEC("+38° 47'"), lat=41.3874, lon=2.1686;
+    const teo=90-Math.abs(lat-dec); let mx=-90;
+    for(let m=0;m<24*60;m++){ const a=altAz(ra,dec,lat,lon,new Date(Date.now()+m*60000)).altitude; if(a>mx)mx=a; }
+    const err=Math.abs(mx-teo);
+    console.log('%c✦ Mi Estrella — Vega: teórica '+teo.toFixed(2)+'° / calculada '+mx.toFixed(2)+'° '+(err<0.5?'✓':'⚠'),'color:'+(err<0.5?'#7ee0a8':'#ff9a9a'));
+  }
+
+  /* ---------- 4) ESTADO ---------- */
+  let estrella=null, ubicacion={...UBIC_DEFECTO}, pos={altitude:0,azimuth:0};
+  function cargar(){ try{ estrella=JSON.parse(localStorage.getItem(CLAVE)); }catch(e){ estrella=null; } }
+  function guardar(d){ localStorage.setItem(CLAVE, JSON.stringify(d)); estrella=d; }
+
+  /* ---------- 5) NAVEGACIÓN ---------- */
+  let pantallaActual='inicio';
+  function irA(scr){
+    pantallaActual=scr;
+    ['inicio','cielo','camara'].forEach(s=>$('scr-'+s).classList.toggle('oculto', s!==scr));
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('activa', t.dataset.scr===scr));
+    if(scr==='cielo') dibujarMapa();
+    if(scr!=='camara') pararCamara();
+  }
   function mostrarRegistro(editando){
-    $('pantallaPrincipal').classList.add('oculto');
+    $('app').classList.add('oculto');
     $('pantallaRegistro').classList.remove('oculto');
     $('btnCancelar').classList.toggle('oculto', !editando);
     if(editando && estrella){
-      $('f_nombre').value = estrella.nombre || '';
-      $('f_ra').value = estrella.raTexto || '';
-      $('f_dec').value = estrella.decTexto || '';
-      $('f_registro').value = estrella.registro || '';
-      $('f_hip').value = estrella.hip || '';
-      $('f_fecha').value = estrella.fecha || '';
-      $('f_dedicatoria').value = estrella.dedicatoria || '';
+      $('f_nombre').value=estrella.nombre||''; $('f_ra').value=estrella.raTexto||''; $('f_dec').value=estrella.decTexto||'';
+      $('f_registro').value=estrella.registro||''; $('f_hip').value=estrella.hip||''; $('f_fecha').value=estrella.fecha||'';
+      $('f_dedicatoria').value=estrella.dedicatoria||'';
     }
     window.scrollTo(0,0);
   }
-
-  function mostrarPrincipal(){
+  function mostrarApp(){
     $('pantallaRegistro').classList.add('oculto');
-    $('pantallaPrincipal').classList.remove('oculto');
-    pintarPortada();
-    actualizarPosicion();
-    window.scrollTo(0,0);
+    $('app').classList.remove('oculto');
+    pintarPortada(); actualizarPosicion(); irA('inicio');
   }
-
   function pintarPortada(){
     $('v_nombre').textContent = estrella.nombre || 'Nuestra estrella';
-    if(estrella.fecha){
-      const f = new Date(estrella.fecha + 'T00:00:00');
-      $('v_fecha').textContent = f.toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'});
-    } else $('v_fecha').textContent = '';
+    if(estrella.fecha){ const f=new Date(estrella.fecha+'T00:00:00'); $('v_fecha').textContent=f.toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'}); }
+    else $('v_fecha').textContent='';
     $('v_dedicatoria').textContent = estrella.dedicatoria || '';
-    const partes = [];
-    if(estrella.registro) partes.push('Registro: ' + estrella.registro);
-    if(estrella.hip) partes.push(estrella.hip);
-    partes.push('RA ' + (estrella.raTexto||'') + '  ·  DEC ' + (estrella.decTexto||''));
-    $('v_meta').innerHTML = partes.join('<br>');
+    const p=[]; if(estrella.registro)p.push('Registro: '+estrella.registro); if(estrella.hip)p.push(estrella.hip);
+    p.push('RA '+(estrella.raTexto||'')+'  ·  DEC '+(estrella.decTexto||''));
+    $('v_meta').innerHTML=p.join('<br>');
   }
 
-  /* ---------------------------------------------------------------------------
-     6) POSICIÓN EN TIEMPO REAL
-  --------------------------------------------------------------------------- */
-  let posEstrella = { altitude:0, azimuth:0 };
-
+  /* ---------- 6) POSICIÓN EN TIEMPO REAL ---------- */
   function actualizarPosicion(){
     if(!estrella) return;
-    const ahora = new Date();
-    const p = altAz(estrella.raDeg, estrella.decDeg, ubicacion.lat, ubicacion.lon, ahora);
-    posEstrella = p;
-    const visible = p.altitude > -0.567;
-
-    const badge = $('v_badge');
-    const instr = $('v_instruccion');
-    const card = cardinal(p.azimuth);
-
+    const ahora=new Date();
+    pos = altAz(estrella.raDeg, estrella.decDeg, ubicacion.lat, ubicacion.lon, ahora);
+    const visible = pos.altitude > -0.567;
+    const card = cardinal(pos.azimuth);
     if(visible){
-      badge.innerHTML = '<span class="visible-badge visible-si">● Visible ahora mismo</span>';
-      instr.innerHTML = 'Mira hacia <b>' + NOMBRE_CARDINAL[card] + '</b>, a <b>' +
-        Math.round(p.altitude) + '°</b> sobre el horizonte.';
+      $('v_pill').innerHTML='<span class="estado-pill visible-si">✨ Visible ahora</span>';
+      $('v_instruccion').innerHTML='Mira hacia <b>'+NOMBRE_CARDINAL[card]+'</b>, a <b>'+Math.round(pos.altitude)+'°</b> de altura.';
     } else {
-      badge.innerHTML = '<span class="visible-badge visible-no">● Bajo el horizonte</span>';
-      const salida = proximaSalida(estrella.raDeg, estrella.decDeg, ubicacion.lat, ubicacion.lon, ahora);
-      if(salida.estado === 'sale'){
-        const h = salida.hora.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
-        const mismaDia = salida.hora.getDate() === ahora.getDate();
-        instr.innerHTML = 'Ahora no se ve. Saldrá por <b>' + NOMBRE_CARDINAL[cardinal(
-          altAz(estrella.raDeg, estrella.decDeg, ubicacion.lat, ubicacion.lon, salida.hora).azimuth)
-          ] + '</b> hacia las <b>' + h + '</b>' + (mismaDia ? '' : ' (mañana)') + '.';
-      } else if(salida.estado === 'nunca'){
-        instr.innerHTML = 'Desde tu ubicación esta estrella no llega a salir por el horizonte. ' +
-          'Se ve mejor desde latitudes más al ' + (estrella.decDeg > 0 ? 'norte' : 'sur') + '.';
-      } else {
-        instr.innerHTML = 'Está bajo el horizonte en este momento.';
-      }
+      $('v_pill').innerHTML='<span class="estado-pill visible-no">🌙 Bajo el horizonte</span>';
+      const sal=proximaSalida(estrella.raDeg,estrella.decDeg,ubicacion.lat,ubicacion.lon,ahora);
+      if(sal.estado==='sale'){
+        const h=sal.hora.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+        const card2=cardinal(altAz(estrella.raDeg,estrella.decDeg,ubicacion.lat,ubicacion.lon,sal.hora).azimuth);
+        const manana=sal.hora.getDate()!==ahora.getDate();
+        $('v_instruccion').innerHTML='Saldrá por <b>'+NOMBRE_CARDINAL[card2]+'</b> hacia las <b>'+h+'</b>'+(manana?' (mañana)':'')+'.';
+      } else if(sal.estado==='nunca'){
+        $('v_instruccion').innerHTML='Desde aquí no llega a salir por el horizonte.';
+      } else $('v_instruccion').textContent='Está bajo el horizonte ahora.';
     }
-
-    $('v_altura').textContent = Math.round(p.altitude) + '°';
-    $('v_azimut').textContent = card;
-    $('v_ubicacion').textContent = '📍 ' + ubicacion.nombre +
-      '  ·  ' + ahora.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-
-    dibujarMapa();
+    $('v_altura').textContent=Math.round(pos.altitude)+'°';
+    $('v_azimut').textContent=card;
+    $('v_ubicacion').textContent='📍 '+ubicacion.nombre+'  ·  '+ahora.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    if(pantallaActual==='cielo') dibujarMapa();
   }
 
-  /* ---------------------------------------------------------------------------
-     7) MAPA DEL CIELO (vista polar: cénit al centro, horizonte al borde)
-  --------------------------------------------------------------------------- */
-  function dibujarMapa(){
-    const c = $('mapaCielo'); const ctx = c.getContext('2d');
-    const W = c.width, cx = W/2, cy = W/2, R = W/2 - 40;
-    ctx.clearRect(0,0,W,W);
-
-    // Fondo circular
-    const g = ctx.createRadialGradient(cx,cy,10,cx,cy,R);
-    g.addColorStop(0,'#101740'); g.addColorStop(1,'#05060f');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx,cy,R,0,7); ctx.fill();
-
-    // Círculos de altura (30°, 60°)
-    ctx.strokeStyle = 'rgba(167,173,207,0.22)'; ctx.lineWidth = 1;
-    [30,60].forEach(a=>{
-      const r = (90-a)/90*R;
-      ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.stroke();
-    });
-    // Horizonte (borde) más marcado
-    ctx.strokeStyle = 'rgba(243,210,122,0.55)'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(cx,cy,R,0,7); ctx.stroke();
-
-    // Líneas cardinales
-    ctx.strokeStyle = 'rgba(167,173,207,0.18)'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(cx,cy-R); ctx.lineTo(cx,cy+R);
-    ctx.moveTo(cx-R,cy); ctx.lineTo(cx+R,cy); ctx.stroke();
-
-    // Cénit
-    ctx.fillStyle = 'rgba(167,173,207,0.7)';
-    ctx.font = '600 20px Georgia'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('·', cx, cy);
-    ctx.font = '13px system-ui';
-    ctx.fillText('cénit', cx, cy+18);
-
-    // Puntos cardinales (N arriba, E derecha, S abajo, O izquierda)
-    ctx.fillStyle = '#f3d27a'; ctx.font = '600 22px Georgia';
-    ctx.fillText('N', cx, cy-R-20);
-    ctx.fillText('S', cx, cy+R+20);
-    ctx.fillText('E', cx+R+20, cy);
-    ctx.fillText('O', cx-R-20, cy);
-
-    // La estrella
-    const alt = posEstrella.altitude, az = posEstrella.azimuth;
-    if(alt > -0.567){
-      const r = (90-alt)/90*R;
-      const x = cx + r*Math.sin(az*DEG);
-      const y = cy - r*Math.cos(az*DEG);
-      // Halo
-      const halo = ctx.createRadialGradient(x,y,0,x,y,16);
-      halo.addColorStop(0,'rgba(255,233,168,0.9)'); halo.addColorStop(1,'rgba(255,233,168,0)');
-      ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(x,y,16,0,7); ctx.fill();
-      // Estrella
-      dibujarEstrellita(ctx, x, y, 7, '#ffe9a8');
-      // Nombre
-      ctx.fillStyle = '#ffe9a8'; ctx.font = '600 14px Georgia'; ctx.textAlign='center';
-      const etiqueta = (estrella && estrella.nombre) ? estrella.nombre : 'Tu estrella';
-      ctx.fillText(etiqueta, x, y - 20);
-    } else {
-      ctx.fillStyle = 'rgba(255,154,154,0.85)'; ctx.font = '15px system-ui'; ctx.textAlign='center';
-      ctx.fillText('Bajo el horizonte', cx, cy - 40);
-    }
-  }
-  function dibujarEstrellita(ctx, cx, cy, r, color){
+  /* ---------- 7) MAPA DEL CIELO ---------- */
+  function estrellita(ctx,cx,cy,r,color){
     ctx.beginPath();
-    for(let i=0;i<10;i++){
-      const ang = -Math.PI/2 + i*Math.PI/5;
-      const rad = i%2===0 ? r : r*0.45;
-      const x = cx + rad*Math.cos(ang), y = cy + rad*Math.sin(ang);
-      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    for(let i=0;i<10;i++){ const a=-Math.PI/2+i*Math.PI/5, rad=i%2===0?r:r*0.45; const x=cx+rad*Math.cos(a), y=cy+rad*Math.sin(a); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); }
+    ctx.closePath(); ctx.fillStyle=color; ctx.fill();
+  }
+  function dibujarMapa(){
+    const c=$('mapaCielo'); if(!c) return; const ctx=c.getContext('2d');
+    const W=c.width, cx=W/2, cy=W/2, R=W/2-40; ctx.clearRect(0,0,W,W);
+    const g=ctx.createRadialGradient(cx,cy,10,cx,cy,R); g.addColorStop(0,'#101740'); g.addColorStop(1,'#05060f');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,R,0,7); ctx.fill();
+    ctx.strokeStyle='rgba(167,173,207,0.22)'; ctx.lineWidth=1;
+    [30,60].forEach(a=>{ ctx.beginPath(); ctx.arc(cx,cy,(90-a)/90*R,0,7); ctx.stroke(); });
+    ctx.strokeStyle='rgba(243,210,122,0.55)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(cx,cy,R,0,7); ctx.stroke();
+    ctx.strokeStyle='rgba(167,173,207,0.18)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(cx,cy-R); ctx.lineTo(cx,cy+R); ctx.moveTo(cx-R,cy); ctx.lineTo(cx+R,cy); ctx.stroke();
+    ctx.fillStyle='rgba(167,173,207,0.75)'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.font='13px system-ui'; ctx.fillText('cénit', cx, cy+16);
+    ctx.fillStyle='#f3d27a'; ctx.font='600 22px Georgia';
+    ctx.fillText('N',cx,cy-R-20); ctx.fillText('S',cx,cy+R+20); ctx.fillText('E',cx+R+20,cy); ctx.fillText('O',cx-R-20,cy);
+    if(pos.altitude>-0.567){
+      const r=(90-pos.altitude)/90*R, x=cx+r*Math.sin(pos.azimuth*DEG), y=cy-r*Math.cos(pos.azimuth*DEG);
+      const halo=ctx.createRadialGradient(x,y,0,x,y,16); halo.addColorStop(0,'rgba(255,233,168,0.9)'); halo.addColorStop(1,'rgba(255,233,168,0)');
+      ctx.fillStyle=halo; ctx.beginPath(); ctx.arc(x,y,16,0,7); ctx.fill();
+      estrellita(ctx,x,y,7,'#ffe9a8');
+      ctx.fillStyle='#ffe9a8'; ctx.font='600 14px Georgia'; ctx.fillText(estrella?.nombre||'Tu estrella', x, y-20);
+    } else {
+      ctx.fillStyle='rgba(255,154,154,0.85)'; ctx.font='15px system-ui'; ctx.fillText('Bajo el horizonte', cx, cy-40);
     }
-    ctx.closePath(); ctx.fillStyle = color; ctx.fill();
   }
 
-  /* ---------------------------------------------------------------------------
-     8) MODO BRÚJULA (DeviceOrientationEvent)
-  --------------------------------------------------------------------------- */
-  let brujulaActiva = false;
-  let rumbo = null;       // hacia dónde apunta el móvil (grados, 0=N)
-  let inclinacion = null; // beta
+  /* ---------- 8) CÁMARA + REALIDAD AUMENTADA ---------- */
+  let camStream=null, camRAF=null, rumbo=null, cabeceo=null, camActiva=false;
+  const FOV_V = 58; // campo de visión vertical aproximado (grados)
 
-  async function activarBrujula(){
-    // iOS exige pedir permiso desde un gesto del usuario.
+  async function activarCamara(){
+    $('camError').style.display='none';
+    // 1) Permiso de orientación (iOS)
     try{
-      if(typeof DeviceOrientationEvent !== 'undefined' &&
-         typeof DeviceOrientationEvent.requestPermission === 'function'){
-        const resp = await DeviceOrientationEvent.requestPermission();
-        if(resp !== 'granted'){
-          $('brujulaMsg').textContent = 'No se dio permiso para los sensores.';
-          $('brujulaContenido').classList.remove('oculto');
-          return;
-        }
+      if(typeof DeviceOrientationEvent!=='undefined' && typeof DeviceOrientationEvent.requestPermission==='function'){
+        const r=await DeviceOrientationEvent.requestPermission();
+        if(r!=='granted'){ mostrarErrorCam('Necesito permiso de <b>movimiento y orientación</b> para saber hacia dónde apuntas. Actívalo y vuelve a intentarlo.'); return; }
       }
-    }catch(e){
-      $('brujulaMsg').textContent = 'Este dispositivo no permite la brújula: usa el mapa del cielo.';
-      $('brujulaContenido').classList.remove('oculto');
-      return;
-    }
-
+    }catch(e){ /* seguimos, algunos navegadores no lo exigen */ }
     window.addEventListener('deviceorientationabsolute', onOrient, true);
     window.addEventListener('deviceorientation', onOrient, true);
-    brujulaActiva = true;
-    $('brujulaContenido').classList.remove('oculto');
-    $('btnBrujula').classList.add('oculto');
-    dibujarBrujula();
-  }
 
-  function onOrient(e){
-    if(typeof e.webkitCompassHeading === 'number'){
-      rumbo = e.webkitCompassHeading;          // iOS: rumbo real (0=N, horario)
-    } else if(e.alpha !== null){
-      rumbo = (360 - e.alpha) % 360;           // Android/otros (aproximado)
-    }
-    if(e.beta !== null) inclinacion = e.beta;
-    dibujarBrujula();
-  }
-
-  function dibujarBrujula(){
-    const c = $('brujulaCanvas'); if(!c) return;
-    const ctx = c.getContext('2d');
-    const W = c.width, cx = W/2, cy = W/2, R = W/2 - 30;
-    ctx.clearRect(0,0,W,W);
-
-    // Esfera
-    const g = ctx.createRadialGradient(cx,cy,10,cx,cy,R);
-    g.addColorStop(0,'#141a44'); g.addColorStop(1,'#05060f');
-    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,R,0,7); ctx.fill();
-    ctx.strokeStyle='rgba(243,210,122,0.4)'; ctx.lineWidth=2; ctx.stroke();
-
-    if(rumbo === null){
-      ctx.fillStyle='rgba(167,173,207,0.8)'; ctx.font='15px system-ui'; ctx.textAlign='center';
-      ctx.fillText('Esperando sensores…', cx, cy);
+    // 2) Cámara trasera
+    try{
+      camStream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:'environment'} }, audio:false });
+    }catch(e){
+      mostrarErrorCam('No pude encender la cámara ('+(e.name||'error')+'). Revisa que diste permiso de cámara. Mientras, puedes usar la pestaña <b>Cielo</b>.');
       return;
     }
+    const v=$('camVideo'); v.srcObject=camStream; try{ await v.play(); }catch(e){}
+    camActiva=true;
+    $('camInicio').style.display='none';
+    $('camBanner').classList.remove('oculto'); $('camHint').classList.remove('oculto');
+    bucleCamara();
+  }
+  function mostrarErrorCam(html){ const e=$('camError'); e.innerHTML=html; e.style.display='block'; }
 
-    // Diferencia entre el rumbo del móvil y el azimut de la estrella
-    let dif = posEstrella.azimuth - rumbo;
-    dif = ((dif % 360) + 360) % 360;
-    const difFirmada = dif > 180 ? dif - 360 : dif;  // -180..180 (der = +)
-
-    // Flecha que apunta hacia la estrella
-    ctx.save();
-    ctx.translate(cx,cy);
-    ctx.rotate(difFirmada * DEG);
-    const cerca = Math.abs(difFirmada) < 8 && (posEstrella.altitude > -0.567);
-    ctx.fillStyle = cerca ? '#7ee0a8' : '#ffe9a8';
-    ctx.beginPath();
-    ctx.moveTo(0,-R+22); ctx.lineTo(16,-R+55); ctx.lineTo(0,-R+45); ctx.lineTo(-16,-R+55);
-    ctx.closePath(); ctx.fill();
-    ctx.restore();
-
-    // Estrella objetivo en el centro
-    dibujarEstrellita(ctx, cx, cy, 12, cerca ? '#7ee0a8' : '#f3d27a');
-
-    // Mensaje guía
-    const msg = $('brujulaMsg');
-    if(posEstrella.altitude <= -0.567){
-      msg.className = 'brujula-msg';
-      msg.textContent = 'La estrella está bajo el horizonte ahora. Vuelve cuando sea visible.';
-    } else if(cerca){
-      msg.className = 'brujula-msg ok';
-      msg.textContent = '✓ ¡Ahí está! Estás apuntando a la estrella. Sube a ' + Math.round(posEstrella.altitude) + '°.';
-    } else {
-      msg.className = 'brujula-msg';
-      msg.textContent = (difFirmada > 0 ? 'Gira a la derecha →  ' : '←  Gira a la izquierda ') +
-        Math.abs(Math.round(difFirmada)) + '°';
-    }
+  function onOrient(e){
+    if(typeof e.webkitCompassHeading==='number') rumbo=e.webkitCompassHeading;
+    else if(e.alpha!=null) rumbo=(360-e.alpha)%360;
+    if(e.beta!=null) cabeceo = e.beta - 90; // altitud a la que apunta la cámara trasera (aprox)
   }
 
-  /* ---------------------------------------------------------------------------
-     9) GEOLOCALIZACIÓN
-  --------------------------------------------------------------------------- */
+  function pararCamara(){
+    camActiva=false;
+    if(camRAF){ cancelAnimationFrame(camRAF); camRAF=null; }
+    if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
+    const v=$('camVideo'); if(v) v.srcObject=null;
+    window.removeEventListener('deviceorientationabsolute', onOrient, true);
+    window.removeEventListener('deviceorientation', onOrient, true);
+    // Reiniciar la pantalla de cámara para la próxima vez
+    $('camInicio').style.display='flex';
+    $('camBanner').classList.add('oculto'); $('camHint').classList.add('oculto');
+    $('camError').style.display='none';
+  }
+
+  function bucleCamara(){
+    if(!camActiva) return;
+    const c=$('camOverlay'), ctx=c.getContext('2d');
+    const W=c.clientWidth, H=c.clientHeight, dpr=Math.min(devicePixelRatio||1,2);
+    if(c.width!==W*dpr||c.height!==H*dpr){ c.width=W*dpr; c.height=H*dpr; }
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,W,H);
+    const cx=W/2, cy=H/2;
+
+    // Posición actual de la estrella
+    if(estrella) pos = altAz(estrella.raDeg, estrella.decDeg, ubicacion.lat, ubicacion.lon, new Date());
+    const banner=$('camBanner'), hint=$('camHint');
+
+    // Mira central
+    ctx.strokeStyle='rgba(255,255,255,0.35)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(cx,cy,26,0,7); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx-40,cy); ctx.lineTo(cx-30,cy); ctx.moveTo(cx+30,cy); ctx.lineTo(cx+40,cy);
+    ctx.moveTo(cx,cy-40); ctx.lineTo(cx,cy-30); ctx.moveTo(cx,cy+30); ctx.lineTo(cx,cy+40); ctx.stroke();
+
+    if(pos.altitude<=-0.567){
+      banner.innerHTML='🌙 Ahora está bajo el horizonte';
+      hint.textContent='No se puede ver todavía. Mira en la pestaña Inicio a qué hora saldrá.';
+      camRAF=requestAnimationFrame(bucleCamara); return;
+    }
+    if(rumbo===null || cabeceo===null){
+      banner.innerHTML='Buscando sensores de movimiento…';
+      hint.textContent='Mueve un poco el móvil. Si no, revisa el permiso de movimiento.';
+      camRAF=requestAnimationFrame(bucleCamara); return;
+    }
+
+    // Diferencia entre a dónde apunta la cámara y dónde está la estrella
+    const dAz = difAngulo(pos.azimuth, rumbo);   // + = estrella a la derecha
+    const dAlt = pos.altitude - cabeceo;          // + = estrella más arriba
+    const FOV_H = FOV_V * (W/H);
+    const x = cx + (dAz/(FOV_H/2))*(W/2);
+    const y = cy - (dAlt/(FOV_V/2))*(H/2);
+    const enVista = Math.abs(dAz)<=FOV_H/2 && Math.abs(dAlt)<=FOV_V/2;
+    const centrada = Math.abs(dAz)<5 && Math.abs(dAlt)<5;
+
+    banner.innerHTML = '✨ '+ (estrella?.nombre||'Tu estrella') +' · '+NOMBRE_CARDINAL[cardinal(pos.azimuth)]+' · '+Math.round(pos.altitude)+'°';
+
+    if(enVista){
+      // Marcador sobre la estrella
+      const t=Date.now()/500, pulso=10+Math.sin(t)*4;
+      const col = centrada ? '#7ee0a8' : '#ffe9a8';
+      const halo=ctx.createRadialGradient(x,y,0,x,y,44); halo.addColorStop(0,(centrada?'rgba(126,224,168,':'rgba(255,233,168,')+'0.55)'); halo.addColorStop(1,'rgba(255,233,168,0)');
+      ctx.fillStyle=halo; ctx.beginPath(); ctx.arc(x,y,44,0,7); ctx.fill();
+      ctx.strokeStyle=col; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(x,y,26+pulso*0.4,0,7); ctx.stroke();
+      estrellita(ctx,x,y,11,col);
+      ctx.fillStyle=col; ctx.font='700 15px Georgia'; ctx.textAlign='center';
+      ctx.fillText(estrella?.nombre||'Tu estrella', x, y-38);
+      if(centrada){ hint.innerHTML='✓ <b style="color:#7ee0a8">¡La tienes justo delante!</b>'; }
+      else{ hint.textContent='Casi… centra la estrella en la mira.'; }
+    } else {
+      // Fuera de la vista: flecha hacia la estrella + guía de texto
+      const ang=Math.atan2(y-cy, x-cx);
+      const rad=Math.min(W,H)/2 - 60;
+      const ax=cx+Math.cos(ang)*rad, ay=cy+Math.sin(ang)*rad;
+      ctx.save(); ctx.translate(ax,ay); ctx.rotate(ang+Math.PI/2);
+      ctx.fillStyle='#ffe9a8';
+      ctx.beginPath(); ctx.moveTo(0,-22); ctx.lineTo(15,15); ctx.lineTo(0,6); ctx.lineTo(-15,15); ctx.closePath(); ctx.fill();
+      ctx.restore();
+      const partes=[];
+      if(Math.abs(dAz)>=5) partes.push(dAz>0?'gira a la derecha →':'← gira a la izquierda');
+      if(Math.abs(dAlt)>=5) partes.push(dAlt>0?'sube el móvil ↑':'baja el móvil ↓');
+      hint.innerHTML = partes.join(' · ') || 'sigue la flecha';
+    }
+    camRAF=requestAnimationFrame(bucleCamara);
+  }
+
+  /* ---------- 9) GEOLOCALIZACIÓN ---------- */
   function pedirUbicacion(){
-    if(!navigator.geolocation){ return; }
+    if(!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
-      pos => {
-        ubicacion = { lat: pos.coords.latitude, lon: pos.coords.longitude, nombre: 'Tu ubicación actual' };
-        actualizarPosicion();
-      },
-      err => { /* se mantiene Barcelona por defecto */ actualizarPosicion(); },
+      p=>{ ubicacion={lat:p.coords.latitude,lon:p.coords.longitude,nombre:'Tu ubicación actual'}; actualizarPosicion(); },
+      e=>{ actualizarPosicion(); },
       { enableHighAccuracy:false, timeout:8000, maximumAge:600000 }
     );
   }
 
-  /* ---------------------------------------------------------------------------
-     10) GUARDAR FORMULARIO
-  --------------------------------------------------------------------------- */
+  /* ---------- 10) GUARDAR FORMULARIO ---------- */
   function alGuardar(){
-    const nombre = $('f_nombre').value.trim();
-    const raTexto = $('f_ra').value.trim();
-    const decTexto = $('f_dec').value.trim();
-    const raDeg = parseRA(raTexto);
-    const decDeg = parseDEC(decTexto);
-    const err = $('errorForm');
-
-    if(!nombre){ return mostrarError('Ponle un nombre a tu estrella.'); }
-    if(raDeg === null){ return mostrarError('Revisa la ascensión recta (RA). Ej: 20h 41m 25s'); }
-    if(decDeg === null || decDeg < -90 || decDeg > 90){ return mostrarError('Revisa la declinación (DEC). Ej: +45° 16\' 49"'); }
+    const nombre=$('f_nombre').value.trim(), raTexto=$('f_ra').value.trim(), decTexto=$('f_dec').value.trim();
+    const raDeg=parseRA(raTexto), decDeg=parseDEC(decTexto), err=$('errorForm');
+    if(!nombre) return errar('Ponle un nombre a tu estrella.');
+    if(raDeg===null) return errar('Revisa la ascensión recta (RA). Ej: 20h 41m 25s');
+    if(decDeg===null||decDeg<-90||decDeg>90) return errar('Revisa la declinación (DEC). Ej: +45° 16\' 49"');
     err.classList.add('oculto');
-
-    guardar({
-      nombre, raTexto, decTexto, raDeg, decDeg,
-      registro: $('f_registro').value.trim(),
-      hip: $('f_hip').value.trim(),
-      fecha: $('f_fecha').value,
-      dedicatoria: $('f_dedicatoria').value.trim()
-    });
-    mostrarPrincipal();
+    guardar({ nombre,raTexto,decTexto,raDeg,decDeg, registro:$('f_registro').value.trim(), hip:$('f_hip').value.trim(), fecha:$('f_fecha').value, dedicatoria:$('f_dedicatoria').value.trim() });
+    mostrarApp();
   }
-  function mostrarError(t){
-    const err = $('errorForm'); err.textContent = t; err.classList.remove('oculto');
-  }
+  function errar(t){ const e=$('errorForm'); e.textContent=t; e.classList.remove('oculto'); }
 
-  /* ---------------------------------------------------------------------------
-     11) FONDO DE ESTRELLAS QUE PARPADEAN
-  --------------------------------------------------------------------------- */
+  /* ---------- 11) FONDO DE ESTRELLAS ---------- */
   function iniciarFondo(){
-    const c = $('cieloFondo'); const ctx = c.getContext('2d');
-    let estrellas = [];
-    function tamano(){
-      c.width = innerWidth * devicePixelRatio;
-      c.height = innerHeight * devicePixelRatio;
-      const n = Math.floor(innerWidth*innerHeight/6000);
-      estrellas = [];
-      for(let i=0;i<n;i++){
-        estrellas.push({
-          x: Math.random()*c.width, y: Math.random()*c.height,
-          r: Math.random()*1.4*devicePixelRatio + 0.3,
-          base: Math.random()*0.5+0.3, vel: Math.random()*0.02+0.005,
-          fase: Math.random()*Math.PI*2,
-          oro: Math.random() < 0.15
-        });
-      }
+    const c=$('cieloFondo'), ctx=c.getContext('2d'); let est=[];
+    function tam(){
+      c.width=innerWidth*devicePixelRatio; c.height=innerHeight*devicePixelRatio;
+      const n=Math.floor(innerWidth*innerHeight/6500); est=[];
+      for(let i=0;i<n;i++) est.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.4*devicePixelRatio+0.3,base:Math.random()*0.5+0.3,vel:Math.random()*0.02+0.005,fase:Math.random()*Math.PI*2,oro:Math.random()<0.15});
     }
     function anim(t){
       ctx.clearRect(0,0,c.width,c.height);
-      for(const s of estrellas){
-        const brillo = s.base + Math.sin(t*s.vel + s.fase)*0.3;
-        ctx.globalAlpha = Math.max(0, Math.min(1, brillo));
-        ctx.fillStyle = s.oro ? '#ffe9a8' : '#ffffff';
-        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 7); ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-      requestAnimationFrame(anim);
+      for(const s of est){ ctx.globalAlpha=Math.max(0,Math.min(1,s.base+Math.sin(t*s.vel+s.fase)*0.3)); ctx.fillStyle=s.oro?'#ffe9a8':'#fff'; ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,7); ctx.fill(); }
+      ctx.globalAlpha=1; requestAnimationFrame(anim);
     }
-    tamano(); addEventListener('resize', tamano);
-    // Un fotograma inmediato (las estrellas aparecen ya) y arranca el bucle,
-    // que el navegador reanuda solo al volver a mostrarse la pestaña.
-    anim(performance.now());
+    tam(); addEventListener('resize',tam); anim(performance.now());
   }
 
-  /* ---------------------------------------------------------------------------
-     12) ARRANQUE
-  --------------------------------------------------------------------------- */
+  /* ---------- 12) ARRANQUE ---------- */
   function init(){
-    iniciarFondo();
-    autoValidacion();
-    cargar();
-
+    iniciarFondo(); autoValidacion(); cargar();
     $('btnGuardar').addEventListener('click', alGuardar);
-    $('btnCancelar').addEventListener('click', mostrarPrincipal);
-    $('btnEditar').addEventListener('click', () => mostrarRegistro(true));
-    $('btnBrujula').addEventListener('click', activarBrujula);
+    $('btnCancelar').addEventListener('click', mostrarApp);
+    $('btnEditar').addEventListener('click', ()=>mostrarRegistro(true));
+    $('btnIrCamara').addEventListener('click', ()=>irA('camara'));
+    $('btnActivarCam').addEventListener('click', activarCamara);
+    document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>irA(t.dataset.scr)));
 
-    if(estrella && estrella.raDeg !== undefined){
-      mostrarPrincipal();
-      pedirUbicacion();
-    } else {
-      mostrarRegistro(false);
-    }
+    if(estrella && estrella.raDeg!==undefined){ mostrarApp(); pedirUbicacion(); }
+    else mostrarRegistro(false);
 
-    // Actualización automática cada 3 segundos
-    setInterval(() => { if(estrella && !$('pantallaPrincipal').classList.contains('oculto')) actualizarPosicion(); }, 3000);
-
-    // Redibujar mapa al cambiar tamaño
-    addEventListener('resize', () => { if(estrella) dibujarMapa(); });
+    setInterval(()=>{ if(estrella && !$('app').classList.contains('oculto')) actualizarPosicion(); }, 3000);
+    addEventListener('resize', ()=>{ if(estrella && pantallaActual==='cielo') dibujarMapa(); });
+    document.addEventListener('visibilitychange', ()=>{ if(document.hidden) pararCamara(); });
   }
 
-  // Registrar el Service Worker (para que funcione sin conexión)
   if('serviceWorker' in navigator){
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW no registrado:', err));
-    });
+    window.addEventListener('load', ()=>{ navigator.serviceWorker.register('sw.js').catch(()=>{}); });
   }
-
   document.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
