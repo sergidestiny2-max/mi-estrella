@@ -94,6 +94,7 @@
     .estado-pill{display:inline-flex;align-items:center;gap:8px;font-size:15px;font-weight:700;padding:9px 18px;border-radius:999px;margin-bottom:4px;}
     .visible-si{background:rgba(126,224,168,.16);color:var(--verde);border:1px solid rgba(126,224,168,.45);}
     .visible-no{background:rgba(255,154,154,.12);color:var(--rojo);border:1px solid rgba(255,154,154,.35);}
+    .visible-dia{background:rgba(243,210,122,.14);color:var(--oro);border:1px solid rgba(243,210,122,.4);}
     .instruccion{font-family:var(--serif);font-size:23px;line-height:1.35;margin:14px 0 4px;}
     .instruccion b{color:var(--oro);}
     .datos-fila{display:flex;gap:12px;margin-top:16px;}
@@ -333,6 +334,47 @@
     }
     return altAz(ra,dec,lat,lon,desde).altitude>hor ? {estado:'siempre'} : {estado:'nunca'};
   }
+  /* Posición del Sol (algoritmo estándar de baja precisión, error < 0.01°).
+     Sirve para saber si es de día: una estrella solo se VE con el cielo oscuro. */
+  function solRaDec(f){
+    const n = diaJuliano(f) - 2451545.0;
+    const L = (280.460 + 0.9856474*n) % 360;
+    const g = ((357.528 + 0.9856003*n) % 360) * DEG;
+    const lam = (L + 1.915*Math.sin(g) + 0.020*Math.sin(2*g)) * DEG;
+    const eps = (23.439 - 0.0000004*n) * DEG;
+    const ra = (Math.atan2(Math.cos(eps)*Math.sin(lam), Math.cos(lam)) * RAD + 360) % 360;
+    const dec = Math.asin(Math.sin(eps)*Math.sin(lam)) * RAD;
+    return { ra, dec };
+  }
+  function altitudSol(lat,lon,f){ const s=solRaDec(f); return altAz(s.ra,s.dec,lat,lon,f).altitude; }
+  const OSCURO = -6; // Sol 6° bajo el horizonte: ya se ven las estrellas brillantes
+  function esOscuro(lat,lon,f){ return altitudSol(lat,lon,f) < OSCURO; }
+
+  // Próximo momento en que la estrella se puede VER de verdad:
+  // sobre el horizonte Y con el cielo oscuro. Busca hasta 60 días
+  // (hay estrellas que pasan temporadas saliendo solo de día, como Sirio en julio).
+  function proximaVision(ra,dec,lat,lon,desde){
+    const ok = t => altAz(ra,dec,lat,lon,t).altitude > -0.567 && esOscuro(lat,lon,t);
+    if(ok(desde)) return desde;
+    const paso = 5*60*1000;
+    for(let i=1;i<=60*24*12;i++){
+      const t = new Date(desde.getTime()+i*paso);
+      if(ok(t)){
+        let ini=t.getTime()-paso, fin=t.getTime();
+        for(let k=0;k<12;k++){ const mid=(ini+fin)/2; if(ok(new Date(mid))) fin=mid; else ini=mid; }
+        return new Date(fin);
+      }
+    }
+    return null;
+  }
+  function textoCuando(t, ahora){
+    const h = t.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+    const man = new Date(ahora.getTime()+86400000);
+    if(t.toDateString()===ahora.toDateString()) return 'esta noche hacia las <b>'+h+'</b>';
+    if(t.toDateString()===man.toDateString()) return 'mañana hacia las <b>'+h+'</b>';
+    return 'la noche del <b>'+t.toLocaleDateString('es-ES',{day:'numeric',month:'long'})+'</b> hacia las <b>'+h+'</b>';
+  }
+
   function cardinal(az){
     const p=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO'];
     return p[Math.round(((az%360)/22.5))%16];
@@ -394,22 +436,27 @@
     if(!estrella) return;
     const ahora=new Date();
     pos = altAz(estrella.raDeg, estrella.decDeg, ubicacion.lat, ubicacion.lon, ahora);
-    const visible = pos.altitude > -0.567;
+    const sobre = pos.altitude > -0.567;                          // ¿está por encima del horizonte?
+    const oscuro = esOscuro(ubicacion.lat, ubicacion.lon, ahora); // ¿el cielo está oscuro?
     const card = cardinal(pos.azimuth);
-    if(visible){
+    if(sobre && oscuro){
       $('v_pill').innerHTML='<span class="estado-pill visible-si">✨ Visible ahora</span>';
       $('v_instruccion').innerHTML='Mira hacia <b>'+NOMBRE_CARDINAL[card]+'</b>, a <b>'+Math.round(pos.altitude)+'°</b> de altura.';
     } else {
-      $('v_pill').innerHTML='<span class="estado-pill visible-no">🌙 Bajo el horizonte</span>';
-      const sal=proximaSalida(estrella.raDeg,estrella.decDeg,ubicacion.lat,ubicacion.lon,ahora);
-      if(sal.estado==='sale'){
-        const h=sal.hora.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
-        const card2=cardinal(altAz(estrella.raDeg,estrella.decDeg,ubicacion.lat,ubicacion.lon,sal.hora).azimuth);
-        const manana=sal.hora.getDate()!==ahora.getDate();
-        $('v_instruccion').innerHTML='Saldrá por <b>'+NOMBRE_CARDINAL[card2]+'</b> hacia las <b>'+h+'</b>'+(manana?' (mañana)':'')+'.';
-      } else if(sal.estado==='nunca'){
-        $('v_instruccion').innerHTML='Desde aquí no llega a salir por el horizonte.';
-      } else $('v_instruccion').textContent='Está bajo el horizonte ahora.';
+      const cuando = proximaVision(estrella.raDeg,estrella.decDeg,ubicacion.lat,ubicacion.lon,ahora);
+      if(sobre && !oscuro){
+        $('v_pill').innerHTML='<span class="estado-pill visible-dia">☀️ Es de día</span>';
+        $('v_instruccion').innerHTML='Tu estrella ya está en el cielo, pero con la luz del sol no se ve. Podrás verla '+
+          (cuando ? textoCuando(cuando, ahora) : 'cuando oscurezca')+'.';
+      } else {
+        $('v_pill').innerHTML='<span class="estado-pill visible-no">🌙 Bajo el horizonte</span>';
+        if(cuando){
+          const card2 = cardinal(altAz(estrella.raDeg,estrella.decDeg,ubicacion.lat,ubicacion.lon,cuando).azimuth);
+          $('v_instruccion').innerHTML='Se podrá ver '+textoCuando(cuando, ahora)+', mirando hacia <b>'+NOMBRE_CARDINAL[card2]+'</b>.';
+        } else {
+          $('v_instruccion').innerHTML='Desde tu ubicación esta estrella no llega a verse por ahora.';
+        }
+      }
     }
     $('v_altura').textContent=Math.round(pos.altitude)+'°';
     $('v_azimut').textContent=card;
@@ -581,7 +628,9 @@
     const enVista = Math.abs(dAz)<=FOV_H/2 && Math.abs(dAlt)<=FOV_V/2;
     const centrada = Math.abs(dAz)<5 && Math.abs(dAlt)<5;
 
-    banner.innerHTML = '✨ '+ (estrella?.nombre||'Tu estrella') +' · '+NOMBRE_CARDINAL[cardinal(pos.azimuth)]+' · '+Math.round(pos.altitude)+'°';
+    const cieloOscuro = esOscuro(ubicacion.lat, ubicacion.lon, new Date());
+    banner.innerHTML = (cieloOscuro ? '✨ ' : '☀️ De día no se ve · aquí estará: ')+
+      (estrella?.nombre||'Tu estrella') +' · '+NOMBRE_CARDINAL[cardinal(pos.azimuth)]+' · '+Math.round(pos.altitude)+'°';
 
     if(enVista){
       // Marcador sobre la estrella
