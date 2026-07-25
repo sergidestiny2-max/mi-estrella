@@ -435,7 +435,9 @@
 
   /* ---------- 8) CÁMARA + REALIDAD AUMENTADA ---------- */
   let camStream=null, camRAF=null, rumbo=null, cabeceo=null, camActiva=false;
-  let sX=null, sY=null, cabeceoSuav=null, brujulaFiable=true; // suavizado de sensores
+  let vvx=null, vvy=null, vvz=null;      // vector de vista suavizado (Este, Norte, Arriba)
+  let offsetAlpha=null;                   // ancla del Norte (iPhone: alpha es relativo)
+  let hayAbsoluto=false, brujulaFiable=true;
   const FOV_V = 58; // campo de visión vertical aproximado (grados)
 
   async function activarCamara(){
@@ -465,27 +467,50 @@
   }
   function mostrarErrorCam(html){ const e=$('camError'); e.innerHTML=html; e.style.display='block'; }
 
+  /* Técnica de Google Sky Map (código abierto), adaptada a la web:
+     NUNCA se usa el ángulo de la brújula directamente para mover el marcador.
+     1) Con α/β/γ (giroscopio: fluido y sin saltos) se monta la matriz de
+        rotación del móvil (estándar W3C: R = Rz(α)·Rx(β)·Ry(γ)) y se rota el
+        eje de la cámara trasera (0,0,−1) al mundo real (Este, Norte, Arriba).
+        Eso da a la vez el rumbo y la inclinación, y tiene en cuenta si el
+        móvil está algo girado (γ), cosa que antes ignorábamos.
+     2) La brújula solo "ancla" dónde está el Norte, muy poco a poco (Sky Map
+        amortigua su magnetómetro mucho más que el resto de sensores por lo
+        mismo): corrige la deriva sin contagiar su temblor al marcador. */
+  function vistaCamara(aDeg, bDeg, gDeg){
+    const a=aDeg*DEG, b=bDeg*DEG, g=gDeg*DEG;
+    const ca=Math.cos(a), sa=Math.sin(a), cb=Math.cos(b), sb=Math.sin(b), cg=Math.cos(g), sg=Math.sin(g);
+    return { x:-ca*sg-sa*sb*cg, y:-sa*sg+ca*sb*cg, z:-cb*cg }; // (Este, Norte, Arriba)
+  }
   function onOrient(e){
-    // --- Rumbo (hacia dónde apunta la cámara en horizontal) ---
-    let h=null;
+    if(e.alpha==null || e.beta==null || e.gamma==null) return;
+    if(e.type==='deviceorientationabsolute') hayAbsoluto=true;
+    else if(hayAbsoluto) return; // si llega el evento absoluto (Android), ignoramos el relativo
+
+    // --- Ancla del Norte ---
     if(typeof e.webkitCompassHeading==='number' && e.webkitCompassHeading>=0){
-      h = e.webkitCompassHeading; // iPhone: rumbo real respecto al Norte
+      // iPhone: alpha es relativo; calculamos qué corrección lo alinearía con el Norte real
       if(typeof e.webkitCompassAccuracy==='number') brujulaFiable = e.webkitCompassAccuracy>=0 && e.webkitCompassAccuracy<25;
-    } else if(e.absolute===true && e.alpha!=null){
-      h = (360 - e.alpha)%360; // Android (solo si es orientación ABSOLUTA = Norte real)
+      // Solo dejamos que la brújula toque el ancla si su lectura significa algo:
+      // apuntando muy alto (>60°) el rumbo magnético no es fiable => ancla congelada.
+      const puedeAnclar = (offsetAlpha===null) || (brujulaFiable && (cabeceo===null || cabeceo < 60));
+      if(puedeAnclar){
+        const objetivo = (360 - e.webkitCompassHeading) - e.alpha;
+        offsetAlpha = (offsetAlpha===null) ? objetivo : offsetAlpha + difAngulo(objetivo, offsetAlpha)*0.03;
+      }
+    } else if(e.absolute===true){
+      offsetAlpha = 0; // Android absoluto: alpha ya está referido al Norte
     }
-    // Suavizado circular con vectores (evita el salto 359°->0° que "volvía loca" la flecha)
-    if(h!==null){
-      const hr=h*DEG, ex=Math.sin(hr), ey=Math.cos(hr), k=0.15;
-      if(sX===null){ sX=ex; sY=ey; } else { sX+=(ex-sX)*k; sY+=(ey-sY)*k; }
-      rumbo = (Math.atan2(sX,sY)*RAD + 360)%360;
-    }
-    // --- Cabeceo (altitud a la que apunta la cámara trasera, aprox), también suavizado ---
-    if(e.beta!=null){
-      const b = e.beta - 90;
-      cabeceoSuav = (cabeceoSuav===null) ? b : cabeceoSuav + (b - cabeceoSuav)*0.15;
-      cabeceo = cabeceoSuav;
-    }
+    if(offsetAlpha===null) return; // aún no sabemos dónde está el Norte
+
+    // --- Vector de vista + suavizado ---
+    const v = vistaCamara(e.alpha + offsetAlpha, e.beta, e.gamma);
+    const k = 0.25;
+    if(vvx===null){ vvx=v.x; vvy=v.y; vvz=v.z; }
+    else { vvx+=(v.x-vvx)*k; vvy+=(v.y-vvy)*k; vvz+=(v.z-vvz)*k; }
+    const n = Math.hypot(vvx,vvy,vvz) || 1;
+    rumbo = (Math.atan2(vvx/n, vvy/n)*RAD + 360)%360;
+    cabeceo = Math.asin(Math.max(-1, Math.min(1, vvz/n)))*RAD;
   }
 
   function pararCamara(){
@@ -495,7 +520,7 @@
     const v=$('camVideo'); if(v) v.srcObject=null;
     window.removeEventListener('deviceorientationabsolute', onOrient, true);
     window.removeEventListener('deviceorientation', onOrient, true);
-    rumbo=null; cabeceo=null; sX=null; sY=null; cabeceoSuav=null; brujulaFiable=true;
+    rumbo=null; cabeceo=null; vvx=null; vvy=null; vvz=null; offsetAlpha=null; hayAbsoluto=false; brujulaFiable=true;
     // Reiniciar la pantalla de cámara para la próxima vez
     $('camInicio').style.display='flex';
     $('camBanner').classList.add('oculto'); $('camHint').classList.add('oculto');
