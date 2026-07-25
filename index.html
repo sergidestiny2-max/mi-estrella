@@ -435,6 +435,7 @@
 
   /* ---------- 8) CÁMARA + REALIDAD AUMENTADA ---------- */
   let camStream=null, camRAF=null, rumbo=null, cabeceo=null, camActiva=false;
+  let sX=null, sY=null, cabeceoSuav=null, brujulaFiable=true; // suavizado de sensores
   const FOV_V = 58; // campo de visión vertical aproximado (grados)
 
   async function activarCamara(){
@@ -465,9 +466,26 @@
   function mostrarErrorCam(html){ const e=$('camError'); e.innerHTML=html; e.style.display='block'; }
 
   function onOrient(e){
-    if(typeof e.webkitCompassHeading==='number') rumbo=e.webkitCompassHeading;
-    else if(e.alpha!=null) rumbo=(360-e.alpha)%360;
-    if(e.beta!=null) cabeceo = e.beta - 90; // altitud a la que apunta la cámara trasera (aprox)
+    // --- Rumbo (hacia dónde apunta la cámara en horizontal) ---
+    let h=null;
+    if(typeof e.webkitCompassHeading==='number' && e.webkitCompassHeading>=0){
+      h = e.webkitCompassHeading; // iPhone: rumbo real respecto al Norte
+      if(typeof e.webkitCompassAccuracy==='number') brujulaFiable = e.webkitCompassAccuracy>=0 && e.webkitCompassAccuracy<25;
+    } else if(e.absolute===true && e.alpha!=null){
+      h = (360 - e.alpha)%360; // Android (solo si es orientación ABSOLUTA = Norte real)
+    }
+    // Suavizado circular con vectores (evita el salto 359°->0° que "volvía loca" la flecha)
+    if(h!==null){
+      const hr=h*DEG, ex=Math.sin(hr), ey=Math.cos(hr), k=0.15;
+      if(sX===null){ sX=ex; sY=ey; } else { sX+=(ex-sX)*k; sY+=(ey-sY)*k; }
+      rumbo = (Math.atan2(sX,sY)*RAD + 360)%360;
+    }
+    // --- Cabeceo (altitud a la que apunta la cámara trasera, aprox), también suavizado ---
+    if(e.beta!=null){
+      const b = e.beta - 90;
+      cabeceoSuav = (cabeceoSuav===null) ? b : cabeceoSuav + (b - cabeceoSuav)*0.15;
+      cabeceo = cabeceoSuav;
+    }
   }
 
   function pararCamara(){
@@ -477,6 +495,7 @@
     const v=$('camVideo'); if(v) v.srcObject=null;
     window.removeEventListener('deviceorientationabsolute', onOrient, true);
     window.removeEventListener('deviceorientation', onOrient, true);
+    rumbo=null; cabeceo=null; sX=null; sY=null; cabeceoSuav=null; brujulaFiable=true;
     // Reiniciar la pantalla de cámara para la próxima vez
     $('camInicio').style.display='flex';
     $('camBanner').classList.add('oculto'); $('camHint').classList.add('oculto');
@@ -537,8 +556,8 @@
       if(centrada){ hint.innerHTML='✓ <b style="color:#7ee0a8">¡La tienes justo delante!</b>'; }
       else{ hint.textContent='Casi… centra la estrella en la mira.'; }
     } else {
-      // Fuera de la vista: flecha hacia la estrella + guía de texto
-      const ang=Math.atan2(y-cy, x-cx);
+      // Fuera de la vista: flecha hacia la estrella (a partir de la diferencia real de ángulos)
+      const ang=Math.atan2(-dAlt, dAz); // dirección estable hacia la estrella en la pantalla
       const rad=Math.min(W,H)/2 - 60;
       const ax=cx+Math.cos(ang)*rad, ay=cy+Math.sin(ang)*rad;
       ctx.save(); ctx.translate(ax,ay); ctx.rotate(ang+Math.PI/2);
@@ -550,6 +569,7 @@
       if(Math.abs(dAlt)>=5) partes.push(dAlt>0?'sube el móvil ↑':'baja el móvil ↓');
       hint.innerHTML = partes.join(' · ') || 'sigue la flecha';
     }
+    if(!brujulaFiable){ hint.innerHTML += ' <span style="color:#ffb3b3">· ⚠ calibra la brújula: mueve el móvil en forma de 8</span>'; }
     camRAF=requestAnimationFrame(bucleCamara);
   }
 
