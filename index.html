@@ -15,6 +15,7 @@
   <meta name="apple-mobile-web-app-title" content="Mi Estrella" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="icon" type="image/png" href="icon-192.png" />
+  <script src="jsqr.min.js" defer></script>
 
   <style>
     :root{
@@ -161,6 +162,10 @@
       <p class="suave" style="font-size:14px;margin-top:6px;">Guarda los datos de tu certificado. Se conservan para siempre en este dispositivo.</p>
     </div>
     <div class="card">
+      <button class="btn btn-sec" id="btnEscanear" style="margin-top:0;">📷 Escanear el código QR del certificado</button>
+      <div class="pista" style="text-align:center;margin-top:8px;">Si escaneas el QR con la cámara del iPhone, la app se abrirá con todo relleno.</div>
+      <div id="qrBanner" class="oculto" style="margin-top:14px;padding:12px 14px;border-radius:12px;background:rgba(126,224,168,.14);border:1px solid rgba(126,224,168,.4);color:var(--verde);font-size:14px;text-align:center;">✦ Datos cargados del código QR — revísalos y pulsa Guardar</div>
+
       <label>Nombre de la estrella</label>
       <input id="f_nombre" type="text" placeholder="Ej. Ana & Luis" />
       <div class="fila2">
@@ -188,6 +193,16 @@
       <button class="btn btn-sec oculto" id="btnCancelar">Cancelar</button>
     </div>
   </section>
+
+  <!-- ============ ESCÁNER DE QR ============ -->
+  <div id="escanerQR" class="oculto" style="position:fixed;inset:0;z-index:50;background:#000;">
+    <video id="qrVideo" playsinline muted autoplay style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"></video>
+    <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">
+      <div style="width:min(70vw,300px);aspect-ratio:1;border:3px solid rgba(243,210,122,.9);border-radius:24px;box-shadow:0 0 0 2000px rgba(0,0,0,.45);"></div>
+    </div>
+    <div id="qrMsg" style="position:absolute;left:0;right:0;bottom:120px;text-align:center;color:#fff;font-size:15px;text-shadow:0 1px 4px #000;padding:0 24px;">Apunta al código QR del certificado</div>
+    <button class="btn btn-sec" id="btnCerrarEscaner" style="position:absolute;left:24px;right:24px;width:auto;bottom:calc(env(safe-area-inset-bottom) + 24px);background:rgba(5,6,15,.75);">Cancelar</button>
+  </div>
 
   <!-- ============ APP ============ -->
   <div id="app" class="oculto">
@@ -621,6 +636,76 @@
   }
   function errar(t){ const e=$('errorForm'); e.textContent=t; e.classList.remove('oculto'); }
 
+  /* ---------- 10b) REGISTRO POR CÓDIGO QR ----------
+     El QR contiene un enlace a la app con los datos en el parámetro "e"
+     (JSON en base64url). Dos caminos:
+     - Escanear con la cámara del iPhone => abre la app con ?e=... y se rellena solo.
+     - Botón "Escanear QR" dentro de la app => cámara + lector jsQR (offline). */
+  function decodificarQR(texto){
+    try{
+      let s = String(texto).trim();
+      const m = s.match(/[?&#]e=([A-Za-z0-9_\-]+)/);   // ¿es un enlace con ?e=...?
+      if(m) s = m[1];
+      let o;
+      if(s[0]==='{') o = JSON.parse(s);                 // ¿JSON directo?
+      else{
+        let b = s.replace(/-/g,'+').replace(/_/g,'/'); // base64url -> base64
+        while(b.length % 4) b += '=';
+        o = JSON.parse(decodeURIComponent(escape(atob(b))));
+      }
+      if(!o || !o.ra || !o.dec) return null;
+      if(parseRA(o.ra)===null || parseDEC(o.dec)===null) return null;
+      return o;
+    }catch(e){ return null; }
+  }
+  function rellenarDesdeQR(o){
+    $('f_nombre').value = o.n || '';
+    $('f_ra').value = o.ra || '';
+    $('f_dec').value = o.dec || '';
+    $('f_registro').value = o.reg || '';
+    $('f_hip').value = o.hip || '';
+    $('f_fecha').value = o.f || '';
+    $('f_dedicatoria').value = o.d || '';
+    $('qrBanner').classList.remove('oculto');
+  }
+
+  let qrStream=null, qrRAF=null;
+  async function abrirEscaner(){
+    if(typeof jsQR !== 'function'){ errar('El lector de QR no está cargado. Recarga la app con conexión.'); return; }
+    try{
+      qrStream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:'environment'} }, audio:false });
+    }catch(e){
+      errar('No pude abrir la cámara para escanear ('+(e.name||'error')+'). Puedes escribir los datos a mano.');
+      return;
+    }
+    $('escanerQR').classList.remove('oculto');
+    $('qrMsg').textContent = 'Apunta al código QR del certificado';
+    const v=$('qrVideo'); v.srcObject=qrStream; try{ await v.play(); }catch(e){}
+    const lienzo=document.createElement('canvas'); const lctx=lienzo.getContext('2d',{willReadFrequently:true});
+    (function buscar(){
+      if(!qrStream) return;
+      if(v.readyState>=2 && v.videoWidth){
+        const esc = Math.min(1, 640/v.videoWidth);   // reducir para que vaya fluido
+        lienzo.width=v.videoWidth*esc; lienzo.height=v.videoHeight*esc;
+        lctx.drawImage(v,0,0,lienzo.width,lienzo.height);
+        const img=lctx.getImageData(0,0,lienzo.width,lienzo.height);
+        const code=jsQR(img.data,img.width,img.height,{inversionAttempts:'dontInvert'});
+        if(code && code.data){
+          const datos=decodificarQR(code.data);
+          if(datos){ cerrarEscaner(); rellenarDesdeQR(datos); return; }
+          $('qrMsg').textContent='Ese QR no es de una estrella. Prueba con el del certificado.';
+        }
+      }
+      qrRAF=requestAnimationFrame(buscar);
+    })();
+  }
+  function cerrarEscaner(){
+    if(qrRAF){ cancelAnimationFrame(qrRAF); qrRAF=null; }
+    if(qrStream){ qrStream.getTracks().forEach(t=>t.stop()); qrStream=null; }
+    const v=$('qrVideo'); if(v) v.srcObject=null;
+    $('escanerQR').classList.add('oculto');
+  }
+
   /* ---------- 11) FONDO DE ESTRELLAS ---------- */
   function iniciarFondo(){
     const c=$('cieloFondo'), ctx=c.getContext('2d'); let est=[];
@@ -645,9 +730,18 @@
     $('btnEditar').addEventListener('click', ()=>mostrarRegistro(true));
     $('btnIrCamara').addEventListener('click', ()=>irA('camara'));
     $('btnActivarCam').addEventListener('click', activarCamara);
+    $('btnEscanear').addEventListener('click', abrirEscaner);
+    $('btnCerrarEscaner').addEventListener('click', cerrarEscaner);
     document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click', ()=>irA(t.dataset.scr)));
 
-    if(estrella && estrella.raDeg!==undefined){ mostrarApp(); pedirUbicacion(); }
+    // ¿Se abrió la app desde un código QR? (enlace con ?e=datos)
+    const qrDatos = decodificarQR(location.search || '');
+    if(qrDatos){
+      history.replaceState(null, '', location.pathname); // limpiar la dirección
+      mostrarRegistro(!!(estrella && estrella.raDeg!==undefined));
+      rellenarDesdeQR(qrDatos);
+    }
+    else if(estrella && estrella.raDeg!==undefined){ mostrarApp(); pedirUbicacion(); }
     else mostrarRegistro(false);
 
     setInterval(()=>{ if(estrella && !$('app').classList.contains('oculto')) actualizarPosicion(); }, 3000);

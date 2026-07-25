@@ -1,10 +1,11 @@
 /* Service Worker de "Mi Estrella"
    Guarda la app en caché para que funcione sin conexión, para siempre. */
 
-const CACHE = 'mi-estrella-v4';
+const CACHE = 'mi-estrella-v5';
 const ARCHIVOS = [
   './',
   './index.html',
+  './jsqr.min.js',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
