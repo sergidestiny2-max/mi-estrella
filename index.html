@@ -612,6 +612,23 @@
       }
     }
 
+    // Aviso cuando la luz del día tapa las estrellas (para que no parezca "vacío")
+    if(tLuz && vis<0.25){
+      const msg1='☀️ Es de día: el sol ilumina el cielo y tapa las estrellas.';
+      const msg2='Pulsa «Luz del sol» abajo para verlas igualmente.';
+      ctx.font='600 13px system-ui'; ctx.textAlign='center';
+      const ancho=Math.min(W-30, Math.max(ctx.measureText(msg1).width, ctx.measureText(msg2).width)+30);
+      const bx=cx-ancho/2, by=18, bh=52;
+      ctx.fillStyle='rgba(5,6,15,0.55)';
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(bx,by,ancho,bh,12) : ctx.rect(bx,by,ancho,bh);
+      ctx.fill();
+      ctx.fillStyle='rgba(255,244,214,0.95)';
+      ctx.fillText(msg1, cx, by+21);
+      ctx.fillStyle='rgba(255,244,214,0.75)';
+      ctx.fillText(msg2, cx, by+40);
+    }
+
     // --- Suelo y horizonte ---
     if(tHor){
       const pts=[];
