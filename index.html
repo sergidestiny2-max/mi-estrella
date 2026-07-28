@@ -16,6 +16,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="icon" type="image/png" href="icon-192.png" />
   <script src="jsqr.min.js" defer></script>
+  <script src="cielo-datos.js" defer></script>
 
   <style>
     :root{
@@ -104,9 +105,19 @@
     .ubic{margin-top:14px;font-size:12px;color:var(--texto-suave);text-align:center;}
     .meta-estrella{margin-top:12px;font-size:12px;color:var(--texto-suave);line-height:1.7;text-align:center;}
 
-    /* ===================== MAPA DEL CIELO ===================== */
-    #mapaCielo{width:100%;max-width:440px;height:auto;display:block;margin:0 auto;border-radius:50%;}
-    .mapa-leyenda{font-size:12.5px;color:var(--texto-suave);text-align:center;margin-top:14px;line-height:1.65;}
+    /* ===================== PLANETARIO (pestaña Cielo) ===================== */
+    #scr-cielo{padding:0;overflow:hidden;background:#000;}
+    #planetario{position:absolute;inset:0;width:100%;height:100%;touch-action:none;}
+    .pl-barra{
+      position:absolute;left:12px;right:12px;bottom:12px;display:flex;gap:4px;
+      background:rgba(10,14,40,.75);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+      border:1px solid rgba(255,255,255,.09);border-radius:20px;padding:10px 4px;
+    }
+    .pl-tg{flex:1;background:none;border:none;color:var(--texto-suave);font-size:10.5px;letter-spacing:.2px;
+      display:flex;flex-direction:column;gap:4px;align-items:center;cursor:pointer;padding:2px 0;}
+    .pl-tg .ic{font-size:21px;line-height:1;filter:grayscale(1) brightness(1.35);transition:filter .2s;}
+    .pl-tg.on{color:var(--oro-claro);}
+    .pl-tg.on .ic{filter:none;}
 
     /* ===================== CÁMARA (AR) ===================== */
     #scr-camara{padding:0;overflow:hidden;background:#000;}
@@ -236,16 +247,15 @@
         </section>
       </section>
 
-      <!-- ---- CIELO ---- -->
+      <!-- ---- CIELO (planetario) ---- -->
       <section id="scr-cielo" class="screen oculto">
-        <div class="cabecera"><span class="tit">Mapa del cielo</span><span style="width:40px"></span></div>
-        <section class="card">
-          <canvas id="mapaCielo" width="600" height="600"></canvas>
-          <div class="mapa-leyenda">
-            El <b style="color:var(--oro)">punto dorado</b> es tu estrella. El centro es el cénit (justo encima de ti)
-            y el borde es el horizonte. Orienta el mapa como una brújula: <b>N</b> arriba.
-          </div>
-        </section>
+        <canvas id="planetario"></canvas>
+        <div class="pl-barra">
+          <button class="pl-tg on" id="tgLuz"><span class="ic">☀️</span>Luz del sol</button>
+          <button class="pl-tg" id="tg360"><span class="ic">🧭</span>360 grados</button>
+          <button class="pl-tg on" id="tgConst"><span class="ic">✨</span>Constelaciones</button>
+          <button class="pl-tg on" id="tgHor"><span class="ic">⛰️</span>Horizonte</button>
+        </div>
       </section>
 
       <!-- ---- CÁMARA (AR) ---- -->
@@ -402,7 +412,7 @@
     pantallaActual=scr;
     ['inicio','cielo','camara'].forEach(s=>$('scr-'+s).classList.toggle('oculto', s!==scr));
     document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('activa', t.dataset.scr===scr));
-    if(scr==='cielo') dibujarMapa();
+    if(scr==='cielo') iniciarPlanetario(); else pararPlanetario();
     if(scr!=='camara') pararCamara();
   }
   function mostrarRegistro(editando){
@@ -461,58 +471,269 @@
     $('v_altura').textContent=Math.round(pos.altitude)+'°';
     $('v_azimut').textContent=card;
     $('v_ubicacion').textContent='📍 '+ubicacion.nombre+'  ·  '+ahora.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
-    if(pantallaActual==='cielo') dibujarMapa();
   }
 
-  /* ---------- 7) MAPA DEL CIELO ---------- */
+  /* ---------- 7) PLANETARIO (pestaña Cielo) ----------
+     Cielo completo estilo Stellarium: ~2300 estrellas reales (catálogo
+     Hipparcos vía d3-celestial), constelaciones, resplandor del sol, suelo
+     con horizonte y modo 360° con sensores. Cada estrella se proyecta con
+     una matriz ecuatorial→horizontal→vista (9 multiplicaciones, sin trig). */
   function estrellita(ctx,cx,cy,r,color){
     ctx.beginPath();
     for(let i=0;i<10;i++){ const a=-Math.PI/2+i*Math.PI/5, rad=i%2===0?r:r*0.45; const x=cx+rad*Math.cos(a), y=cy+rad*Math.sin(a); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); }
     ctx.closePath(); ctx.fillStyle=color; ctx.fill();
   }
-  function dibujarMapa(){
-    const c=$('mapaCielo'); if(!c) return; const ctx=c.getContext('2d');
-    const W=c.width, cx=W/2, cy=W/2, R=W/2-40; ctx.clearRect(0,0,W,W);
-    const g=ctx.createRadialGradient(cx,cy,10,cx,cy,R); g.addColorStop(0,'#101740'); g.addColorStop(1,'#05060f');
-    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,R,0,7); ctx.fill();
-    ctx.strokeStyle='rgba(167,173,207,0.22)'; ctx.lineWidth=1;
-    [30,60].forEach(a=>{ ctx.beginPath(); ctx.arc(cx,cy,(90-a)/90*R,0,7); ctx.stroke(); });
-    ctx.strokeStyle='rgba(243,210,122,0.55)'; ctx.lineWidth=2; ctx.beginPath(); ctx.arc(cx,cy,R,0,7); ctx.stroke();
-    ctx.strokeStyle='rgba(167,173,207,0.18)'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(cx,cy-R); ctx.lineTo(cx,cy+R); ctx.moveTo(cx-R,cy); ctx.lineTo(cx+R,cy); ctx.stroke();
-    ctx.fillStyle='rgba(167,173,207,0.75)'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.font='13px system-ui'; ctx.fillText('cénit', cx, cy+16);
-    ctx.fillStyle='#f3d27a'; ctx.font='600 22px Georgia';
-    ctx.fillText('N',cx,cy-R-20); ctx.fillText('S',cx,cy+R+20); ctx.fillText('E',cx+R+20,cy); ctx.fillText('O',cx-R-20,cy);
-    if(pos.altitude>-0.567){
-      const r=(90-pos.altitude)/90*R, x=cx+r*Math.sin(pos.azimuth*DEG), y=cy-r*Math.cos(pos.azimuth*DEG);
-      const halo=ctx.createRadialGradient(x,y,0,x,y,16); halo.addColorStop(0,'rgba(255,233,168,0.9)'); halo.addColorStop(1,'rgba(255,233,168,0)');
-      ctx.fillStyle=halo; ctx.beginPath(); ctx.arc(x,y,16,0,7); ctx.fill();
-      estrellita(ctx,x,y,7,'#ffe9a8');
-      ctx.fillStyle='#ffe9a8'; ctx.font='600 14px Georgia'; ctx.fillText(estrella?.nombre||'Tu estrella', x, y-20);
-    } else {
-      ctx.fillStyle='rgba(255,154,154,0.85)'; ctx.font='15px system-ui'; ctx.fillText('Bajo el horizonte', cx, cy-40);
+
+  let plRAF=null, vistaAz=180, vistaAlt=30;
+  const plFov=66; // campo de visión vertical (grados)
+  let tLuz=true, t360=false, tConst=true, tHor=true, plSensores=false;
+  let plVecs=null, plMags=null, plListo=false;
+
+  function prepararPlanetario(){
+    if(plListo || typeof CIELO_ESTRELLAS==='undefined') return;
+    const n=CIELO_ESTRELLAS.length;
+    plVecs=new Float32Array(n*3); plMags=new Float32Array(n);
+    for(let i=0;i<n;i++){
+      const e=CIELO_ESTRELLAS[i], cd=Math.cos(e[1]*DEG);
+      plVecs[i*3]=cd*Math.cos(e[0]*DEG); plVecs[i*3+1]=cd*Math.sin(e[0]*DEG); plVecs[i*3+2]=Math.sin(e[1]*DEG);
+      plMags[i]=e[2];
+    }
+    plListo=true;
+  }
+  function vecEcuatorial(ra,dec){ const cd=Math.cos(dec*DEG); return [cd*Math.cos(ra*DEG), cd*Math.sin(ra*DEG), Math.sin(dec*DEG)]; }
+
+  function dibujarPlanetario(){
+    const c=$('planetario'); if(!c) return;
+    const dpr=Math.min(devicePixelRatio||1,2);
+    const W=c.clientWidth, H=c.clientHeight;
+    if(!W||!H) return;
+    if(c.width!==W*dpr||c.height!==H*dpr){ c.width=W*dpr; c.height=H*dpr; }
+    const ctx=c.getContext('2d');
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+
+    const ahora=new Date();
+    if(t360 && rumbo!==null && cabeceo!==null){ vistaAz=rumbo; vistaAlt=Math.max(-89,Math.min(89,cabeceo)); }
+
+    // Matrices: ecuatorial -> horizontal (filas E,N,U) y horizontal -> vista
+    const lst=(gmstGrados(ahora)+ubicacion.lon)*DEG, la=ubicacion.lat*DEG;
+    const cL=Math.cos(lst), sL=Math.sin(lst), cl=Math.cos(la), sl=Math.sin(la);
+    const M=[-sL,cL,0, -sl*cL,-sl*sL,cl, cl*cL,cl*sL,sl];
+    const az=vistaAz*DEG, al=vistaAlt*DEG;
+    const ca=Math.cos(az), sa=Math.sin(az), cal=Math.cos(al), sal=Math.sin(al);
+    const D=[sa*cal, ca*cal, sal];       // hacia dónde miramos
+    const Rt=[ca,-sa,0];                  // derecha de la pantalla
+    const Up=[-sa*sal,-ca*sal,cal];       // arriba de la pantalla
+    const fil=v=>[v[0]*M[0]+v[1]*M[3]+v[2]*M[6], v[0]*M[1]+v[1]*M[4]+v[2]*M[7], v[0]*M[2]+v[1]*M[5]+v[2]*M[8]];
+    const TR=fil(Rt), TU=fil(Up), TD=fil(D);
+    const f=(H/2)/Math.tan(plFov/2*DEG), cx=W/2, cy=H/2;
+    function proyH(p){ // proyecta un vector en marco horizontal (E,N,U)
+      const pz=p[0]*D[0]+p[1]*D[1]+p[2]*D[2];
+      if(pz<=0.03) return null;
+      return [cx+(p[0]*Rt[0]+p[1]*Rt[1]+p[2]*Rt[2])/pz*f, cy-(p[0]*Up[0]+p[1]*Up[1]+p[2]*Up[2])/pz*f, pz];
+    }
+
+    // --- Sol y color del cielo ---
+    const s=solRaDec(ahora), pSol=altAz(s.ra,s.dec,ubicacion.lat,ubicacion.lon,ahora);
+    const altSol = tLuz ? pSol.altitude : -30;
+    const col=(a,b,t)=>[a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t];
+    const NOCHE=[5,6,15], ASTRO=[7,9,24], NAUT=[13,18,45], CIVIL=[36,48,96], OCASO=[70,90,140], DIA=[125,165,215];
+    let base;
+    if(altSol>=5) base=DIA;
+    else if(altSol>=0) base=col(OCASO,DIA,altSol/5);
+    else if(altSol>=-6) base=col(CIVIL,OCASO,(altSol+6)/6);
+    else if(altSol>=-12) base=col(NAUT,CIVIL,(altSol+12)/6);
+    else if(altSol>=-18) base=col(ASTRO,NAUT,(altSol+18)/6);
+    else base=NOCHE;
+    const g=ctx.createLinearGradient(0,0,0,H);
+    g.addColorStop(0,'rgb('+base.map(v=>Math.round(v*0.55)).join(',')+')');
+    g.addColorStop(1,'rgb('+base.map(v=>Math.min(255,Math.round(v*1.45))).join(',')+')');
+    ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+    // Resplandor alrededor del sol (y su disco si asoma)
+    const vSol=[Math.sin(pSol.azimuth*DEG)*Math.cos(pSol.altitude*DEG), Math.cos(pSol.azimuth*DEG)*Math.cos(pSol.altitude*DEG), Math.sin(pSol.altitude*DEG)];
+    const sSol = tLuz ? proyH(vSol) : null;
+    if(sSol && altSol>-18){
+      const a = altSol>0 ? 0.35 : 0.3*(1-Math.min(1,-altSol/18));
+      const gl=ctx.createRadialGradient(sSol[0],sSol[1],0,sSol[0],sSol[1],H*0.9);
+      gl.addColorStop(0,'rgba(255,210,140,'+a.toFixed(3)+')'); gl.addColorStop(1,'rgba(255,210,140,0)');
+      ctx.fillStyle=gl; ctx.fillRect(0,0,W,H);
+      if(altSol>-1){ ctx.fillStyle='#fff2cc'; ctx.beginPath(); ctx.arc(sSol[0],sSol[1],8,0,7); ctx.fill(); }
+    }
+
+    // Cuánto se ven las estrellas según lo oscuro que esté
+    const vis = tLuz ? Math.max(0,Math.min(1,-altSol/12)) : 1;
+
+    // --- Constelaciones ---
+    if(tConst && vis>0.05 && typeof CIELO_LINEAS!=='undefined'){
+      ctx.strokeStyle='rgba(120,155,215,'+(0.32*vis).toFixed(3)+')'; ctx.lineWidth=1;
+      ctx.beginPath();
+      for(const linea of CIELO_LINEAS){
+        let prev=null;
+        for(const pt of linea){
+          const v=vecEcuatorial(pt[0],pt[1]);
+          const pz=v[0]*TD[0]+v[1]*TD[1]+v[2]*TD[2];
+          if(pz<=0.03){ prev=null; continue; }
+          const x=cx+(v[0]*TR[0]+v[1]*TR[1]+v[2]*TR[2])/pz*f;
+          const y=cy-(v[0]*TU[0]+v[1]*TU[1]+v[2]*TU[2])/pz*f;
+          if(prev){ ctx.moveTo(prev[0],prev[1]); ctx.lineTo(x,y); }
+          prev=[x,y];
+        }
+      }
+      ctx.stroke();
+    }
+
+    // --- Estrellas ---
+    if(plListo && vis>0.02){
+      for(let i=0;i<plMags.length;i++){
+        const x0=plVecs[i*3], y0=plVecs[i*3+1], z0=plVecs[i*3+2];
+        const pz=x0*TD[0]+y0*TD[1]+z0*TD[2];
+        if(pz<=0.03) continue;
+        const x=cx+(x0*TR[0]+y0*TR[1]+z0*TR[2])/pz*f;
+        const y=cy-(x0*TU[0]+y0*TU[1]+z0*TU[2])/pz*f;
+        if(x<-8||x>W+8||y<-8||y>H+8) continue;
+        const m=plMags[i];
+        ctx.globalAlpha=Math.max(0.18,Math.min(1,1.25-0.18*m))*vis;
+        ctx.fillStyle= m<1.3 ? '#eaf0ff' : '#c9d4ee';
+        ctx.beginPath(); ctx.arc(x,y,Math.max(0.5,3.1-0.52*m),0,7); ctx.fill();
+      }
+      ctx.globalAlpha=1;
+      // Nombres de las estrellas brillantes
+      if(typeof CIELO_NOMBRES!=='undefined'){
+        ctx.fillStyle='rgba(165,185,220,'+(0.85*vis).toFixed(3)+')'; ctx.font='11px system-ui'; ctx.textAlign='left';
+        for(const nm of CIELO_NOMBRES){
+          const v=vecEcuatorial(nm[0],nm[1]);
+          const pz=v[0]*TD[0]+v[1]*TD[1]+v[2]*TD[2];
+          if(pz<=0.03) continue;
+          const x=cx+(v[0]*TR[0]+v[1]*TR[1]+v[2]*TR[2])/pz*f;
+          const y=cy-(v[0]*TU[0]+v[1]*TU[1]+v[2]*TU[2])/pz*f;
+          if(x<-40||x>W+10||y<0||y>H) continue;
+          ctx.fillText(nm[2], x+6, y-6);
+        }
+      }
+    }
+
+    // --- Suelo y horizonte ---
+    if(tHor){
+      const pts=[];
+      for(let off=-115; off<=115; off+=3){
+        const a2=(vistaAz+off)*DEG;
+        const p=proyH([Math.sin(a2),Math.cos(a2),0]);
+        if(p) pts.push(p);
+      }
+      if(pts.length>1){
+        const luz = tLuz ? Math.max(0,Math.min(1,(altSol+12)/24)) : 0;
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0],pts[0][1]);
+        for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i][0],pts[i][1]);
+        ctx.lineTo(pts[pts.length-1][0],H+60); ctx.lineTo(pts[0][0],H+60);
+        ctx.closePath();
+        const topY=Math.max(0,Math.min(...pts.map(p=>p[1])));
+        const gs=ctx.createLinearGradient(0,topY,0,H);
+        gs.addColorStop(0,'rgb('+Math.round(26+40*luz)+','+Math.round(28+40*luz)+','+Math.round(18+30*luz)+')');
+        gs.addColorStop(1,'rgb('+Math.round(10+18*luz)+','+Math.round(11+18*luz)+','+Math.round(7+12*luz)+')');
+        ctx.fillStyle=gs; ctx.fill();
+        ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]);
+        for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i][0],pts[i][1]);
+        ctx.stroke();
+      } else if(vistaAlt<0){
+        ctx.fillStyle='#141610'; ctx.fillRect(0,0,W,H);
+      }
+      // Puntos cardinales sobre el horizonte
+      ctx.font='700 15px system-ui'; ctx.textAlign='center';
+      for(const [a3,l] of [[0,'N'],[45,'NE'],[90,'E'],[135,'SE'],[180,'S'],[225,'SO'],[270,'O'],[315,'NO']]){
+        const p=proyH([Math.sin(a3*DEG),Math.cos(a3*DEG),0]);
+        if(!p) continue;
+        ctx.fillStyle = l.length===1 ? 'rgba(224,106,90,0.95)' : 'rgba(224,106,90,0.55)';
+        ctx.fillText(l, p[0], p[1]-8);
+      }
+    }
+
+    // --- Nuestra estrella (siempre destacada en dorado) ---
+    if(estrella && estrella.raDeg!==undefined){
+      const v=vecEcuatorial(estrella.raDeg, estrella.decDeg);
+      const pz=v[0]*TD[0]+v[1]*TD[1]+v[2]*TD[2];
+      if(pz>0.03){
+        const x=cx+(v[0]*TR[0]+v[1]*TR[1]+v[2]*TR[2])/pz*f;
+        const y=cy-(v[0]*TU[0]+v[1]*TU[1]+v[2]*TU[2])/pz*f;
+        const halo=ctx.createRadialGradient(x,y,0,x,y,26+Math.sin(Date.now()/600)*4);
+        halo.addColorStop(0,'rgba(255,233,168,0.85)'); halo.addColorStop(1,'rgba(255,233,168,0)');
+        ctx.fillStyle=halo; ctx.beginPath(); ctx.arc(x,y,30,0,7); ctx.fill();
+        estrellita(ctx,x,y,8,'#ffe9a8');
+        ctx.fillStyle='#ffe9a8'; ctx.font='700 14px Georgia'; ctx.textAlign='center';
+        ctx.fillText(estrella.nombre||'Tu estrella', x, y-24);
+      } else {
+        // Fuera de la vista: flecha dorada hacia ella
+        let px=v[0]*TR[0]+v[1]*TR[1]+v[2]*TR[2], py=v[0]*TU[0]+v[1]*TU[1]+v[2]*TU[2];
+        if(pz<0){ px=-px; py=-py; }
+        const ang=Math.atan2(-py,px), rad=Math.min(W,H)/2-46;
+        const ax=cx+Math.cos(ang)*rad, ay=cy+Math.sin(ang)*rad;
+        ctx.save(); ctx.translate(ax,ay); ctx.rotate(ang+Math.PI/2);
+        ctx.fillStyle='rgba(255,233,168,0.9)';
+        ctx.beginPath(); ctx.moveTo(0,-16); ctx.lineTo(11,12); ctx.lineTo(0,5); ctx.lineTo(-11,12); ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
     }
   }
 
+  function iniciarPlanetario(){
+    prepararPlanetario();
+    if(estrella){ vistaAz=pos.azimuth||180; vistaAlt=Math.max(-85,Math.min(85,pos.altitude||30)); }
+    if(plRAF) return;
+    (function paso(){ dibujarPlanetario(); plRAF=requestAnimationFrame(paso); })();
+  }
+  function pararPlanetario(){
+    if(plRAF){ cancelAnimationFrame(plRAF); plRAF=null; }
+    if(t360){ t360=false; if(plSensores){ desconectarSensores(); plSensores=false; } refrescarTogglesPl(); }
+  }
+  function refrescarTogglesPl(){
+    $('tgLuz').classList.toggle('on',tLuz);
+    $('tg360').classList.toggle('on',t360);
+    $('tgConst').classList.toggle('on',tConst);
+    $('tgHor').classList.toggle('on',tHor);
+  }
+
   /* ---------- 8) CÁMARA + REALIDAD AUMENTADA ---------- */
-  let camStream=null, camRAF=null, rumbo=null, cabeceo=null, camActiva=false;
+  let camStream=null, camRAF=null, rumbo=null, cabeceo=null, camActiva=false, camSensores=false;
   let vvx=null, vvy=null, vvz=null;      // vector de vista suavizado (Este, Norte, Arriba)
   let offsetAlpha=null;                   // ancla del Norte (iPhone: alpha es relativo)
   let hayAbsoluto=false, brujulaFiable=true;
   const FOV_V = 58; // campo de visión vertical aproximado (grados)
 
-  async function activarCamara(){
-    $('camError').style.display='none';
-    // 1) Permiso de orientación (iOS)
+  // Los sensores los comparten la cámara AR y el planetario (modo 360):
+  // un contador de usos evita que uno se los quite al otro.
+  let usosSensores=0;
+  async function pedirPermisoSensores(){
     try{
       if(typeof DeviceOrientationEvent!=='undefined' && typeof DeviceOrientationEvent.requestPermission==='function'){
-        const r=await DeviceOrientationEvent.requestPermission();
-        if(r!=='granted'){ mostrarErrorCam('Necesito permiso de <b>movimiento y orientación</b> para saber hacia dónde apuntas. Actívalo y vuelve a intentarlo.'); return; }
+        return (await DeviceOrientationEvent.requestPermission())==='granted';
       }
-    }catch(e){ /* seguimos, algunos navegadores no lo exigen */ }
-    window.addEventListener('deviceorientationabsolute', onOrient, true);
-    window.addEventListener('deviceorientation', onOrient, true);
+    }catch(e){}
+    return true; // navegadores que no exigen permiso
+  }
+  function conectarSensores(){
+    usosSensores++;
+    if(usosSensores===1){
+      window.addEventListener('deviceorientationabsolute', onOrient, true);
+      window.addEventListener('deviceorientation', onOrient, true);
+    }
+  }
+  function desconectarSensores(){
+    usosSensores=Math.max(0,usosSensores-1);
+    if(usosSensores===0){
+      window.removeEventListener('deviceorientationabsolute', onOrient, true);
+      window.removeEventListener('deviceorientation', onOrient, true);
+      rumbo=null; cabeceo=null; vvx=null; vvy=null; vvz=null; offsetAlpha=null; hayAbsoluto=false; brujulaFiable=true;
+    }
+  }
+
+  async function activarCamara(){
+    $('camError').style.display='none';
+    if(!(await pedirPermisoSensores())){
+      mostrarErrorCam('Necesito permiso de <b>movimiento y orientación</b> para saber hacia dónde apuntas. Actívalo y vuelve a intentarlo.');
+      return;
+    }
+    conectarSensores(); camSensores=true;
 
     // 2) Cámara trasera
     try{
@@ -580,9 +801,7 @@
     if(camRAF){ cancelAnimationFrame(camRAF); camRAF=null; }
     if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
     const v=$('camVideo'); if(v) v.srcObject=null;
-    window.removeEventListener('deviceorientationabsolute', onOrient, true);
-    window.removeEventListener('deviceorientation', onOrient, true);
-    rumbo=null; cabeceo=null; vvx=null; vvy=null; vvz=null; offsetAlpha=null; hayAbsoluto=false; brujulaFiable=true;
+    if(camSensores){ desconectarSensores(); camSensores=false; }
     // Reiniciar la pantalla de cámara para la próxima vez
     $('camInicio').style.display='flex';
     $('camBanner').classList.add('oculto'); $('camHint').classList.add('oculto');
@@ -794,8 +1013,36 @@
     else mostrarRegistro(false);
 
     setInterval(()=>{ if(estrella && !$('app').classList.contains('oculto')) actualizarPosicion(); }, 3000);
-    addEventListener('resize', ()=>{ if(estrella && pantallaActual==='cielo') dibujarMapa(); });
     document.addEventListener('visibilitychange', ()=>{ if(document.hidden) pararCamara(); });
+
+    // Planetario: botones y arrastre con el dedo
+    $('tgLuz').addEventListener('click', ()=>{ tLuz=!tLuz; refrescarTogglesPl(); });
+    $('tgConst').addEventListener('click', ()=>{ tConst=!tConst; refrescarTogglesPl(); });
+    $('tgHor').addEventListener('click', ()=>{ tHor=!tHor; refrescarTogglesPl(); });
+    $('tg360').addEventListener('click', async ()=>{
+      if(t360){ t360=false; if(plSensores){ desconectarSensores(); plSensores=false; } }
+      else{
+        if(!(await pedirPermisoSensores())) return;
+        conectarSensores(); plSensores=true; t360=true;
+      }
+      refrescarTogglesPl();
+    });
+    const pl=$('planetario');
+    let arrastre=null;
+    pl.addEventListener('pointerdown', e=>{
+      arrastre={x:e.clientX, y:e.clientY};
+      if(t360){ t360=false; if(plSensores){ desconectarSensores(); plSensores=false; } refrescarTogglesPl(); }
+      try{ pl.setPointerCapture(e.pointerId); }catch(err){}
+    });
+    pl.addEventListener('pointermove', e=>{
+      if(!arrastre) return;
+      const degPx = plFov / (pl.clientHeight||1);
+      vistaAz = (vistaAz - (e.clientX-arrastre.x)*degPx + 360) % 360;
+      vistaAlt = Math.max(-89, Math.min(89, vistaAlt + (e.clientY-arrastre.y)*degPx));
+      arrastre={x:e.clientX, y:e.clientY};
+    });
+    pl.addEventListener('pointerup', ()=>{ arrastre=null; });
+    pl.addEventListener('pointercancel', ()=>{ arrastre=null; });
   }
 
   if('serviceWorker' in navigator){
